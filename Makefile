@@ -1,43 +1,58 @@
-# This is a makefile.
-# This makes a parallel simulation for different dielectric problem
-# Use option -p in CC for profiling with gprof
+#This make file builds the sub folder make files
+PROG = np_shape_lab
+JOBSCR = iu_cluster_job_script.pbs
+TEST = test.pbs
 
-PROG = oncluster_simulate_membrane
+BIN = bin
+BASE = src
+SCRIPT = scripts
 
-OBJ = main.o newmd.o newforces.o newenergies.o interface.o functions.o vertex.o edge.o face.o vector3d.o
+all:
+	@echo "Starting build of the $(BASE) directory";
+ifeq ($(CCF),BigRed2)	
+	+$(MAKE) -C $(BASE) cluster-install
+else ifeq ($(CCF),nanoHUB)
+	+$(MAKE) -C $(BASE)
+else
+	+$(MAKE) -C $(BASE)
+endif
+	@echo "Ending the build of the $(BASE) directory";
+	@echo "installing the $(PROG) into $(BIN) directory"; cp -f $(BASE)/$(PROG) $(BIN)
 
-CC = g++ -O3 -g -Wall
+install: all
+	create-dirs
 
-LFLAG = -lgsl -lgslcblas -lboost_filesystem -lboost_system -lboost_program_options
+cluster-install: create-dirs
+	make CCF=BigRed2 all
 
-CFLAG = -c
 
-OFLAG = -o
+nanoHUB-install: create-dirs
+	make CCF=nanoHUB all
 
-$(PROG) : $(OBJ)
-	$(CC) $(OFLAG) $(PROG) $(OBJ) $(LIBS) $(LFLAG)
+create-dirs:
+	@echo "Checking and creating needed sub-directories in the $(BIN) directory"
+	if ! [ -d $(BIN) ]; then mkdir $(BIN); fi
+	if ! [ -d $(BIN)/outfiles ]; then mkdir $(BIN)/outfiles; fi
+	@echo "Directory creation is over."
 
-main.o: utility.h interface.h vertex.h edge.h face.h control.h functions.h thermostat.h
-newmd.o: utility.h interface.h thermostat.h functions.h newforces.h newenergies.h
-newforces.o: newforces.h functions.h
-newenergies.o: newenergies.h
-interface.o: interface.h functions.h newenergies.h
-functions.o: functions.h
-vertex.o: vertex.h functions.h
-edge.o: edge.h
-face.o: face.h functions.h
-vector3d.o: vector3d.h
+cluster-submit:
+	@echo "Installing jobscript into $(BIN) directory"
+	cp -f $(SCRIPT)/$(JOBSCR) $(BIN)
+	+$(MAKE) -C $(BIN) submit
+
+cluster-test-submit:
+	@echo "Installing test jobscript into $(BIN) directory"
+	cp -f $(SCRIPT)/$(TEST) $(BIN)
+	+$(MAKE) -C $(BIN) test
 
 clean:
-	rm -f *.o
+	rm -f $(BASE)/*.o
+	rm -f $(BASE)/$(PROG)
+	rm -f $(BIN)/$(PROG)
 
 dataclean:
-	rm -f outfiles/*
+	rm -f $(BIN)/outfiles/*.dat $(BIN)/outfiles/*.xyz  $(BIN)/outfiles/*.lammpstrj
+	rm -f $(BIN)/*.log
+	rm -f $(BIN)/*.pbs
 
-full:
-	rm -f *.o
-	rm -f outfiles/*
-	make -j 10
-	echo 900 0.01 3 30 30 | ./oncluster_simulate_membrane
-	
-	# d1 d2 qstr alpha c_s k_b k_s t_tot C T Q dt anneal_F off_F
+.PHONY: all clean

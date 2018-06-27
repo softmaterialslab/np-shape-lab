@@ -16,9 +16,16 @@
 #include<gsl/gsl_sf_legendre.h>
 #include<gsl/gsl_poly.h>
 
-// 2017.09.20 NB note:  Chunksize & threadsize macros are never used.  Indicated by VJ comment below, not parallel yet.
-#define CHUNKSIZE 1				// for parallel implementation
-#define THREADSIZE 8		  // threadsize could change depending on the particular loop, it might be better that way
+//OPENMP
+#include <omp.h>
+//BOOST MPI
+#include <boost/mpi.hpp>
+#include <boost/mpi/environment.hpp>
+#include <boost/mpi/communicator.hpp>
+#include <boost/serialization/vector.hpp>
+#include <boost/serialization/base_object.hpp>
+
+namespace mpi = boost::mpi;
 
 using namespace std;
 

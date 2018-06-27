@@ -8,6 +8,17 @@
 
 class VECTOR3D 
 {
+private:
+    friend class boost::serialization::access;
+
+    template<class Archive>
+    void serialize(Archive &ar, const unsigned int version)
+    {
+        ar & x;
+        ar & y;
+        ar & z;
+    }
+
   public:
     long double x, y, z;									// component along each axis (cartesian)
     VECTOR3D(long double xx = 0.0, long double yy = 0.0, long double zz = 0.0) : x(xx), y(yy), z(zz) 	// make a 3d vector
