@@ -42,7 +42,7 @@ Testing parameters: echo 3 4 100 35 0.0001 300 0.8 0 1 1
 
 2017.09.07:  NB has verified all mathematical components of the volume and area constraints.  All are correct, a factor of (1/2) is missing in the face area gradient within the "compute_neg_VGrads" function; however, adding it here causes major issues, meaning it is probably within those functions already (must check).  It is only used in bending energy calculations and (if area constrained) the "SHAKE/RATTLE_for_area" functions.  Adding (1/2) factors in the appropriate place within the "SHAKE/RATTLE_for_area" seems to be fine.
 
-2018.08.02: VJ testing branch
+2018.08.02: VJ created a sequential branch for debugging or main code changes.
 
 */
 
