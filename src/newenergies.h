@@ -11,7 +11,7 @@ inline long double vertex_kinetic_energy(vector<VERTEX>& V)
     V[i].real_kinetic_energy();
   long double kinetic_energy = 0.0;
   for (unsigned int i = 0; i < V.size(); i++)
-    kinetic_energy += V[i].Realke;
+    kinetic_energy += V[i].realke;
   return kinetic_energy;
 }
 
