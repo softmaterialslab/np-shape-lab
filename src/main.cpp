@@ -244,6 +244,7 @@ int main(int argc, const char *argv[]) {
              << "  Ref area: " << boundary.ref_Area_Vertices << endl;
         cout << "Bending rigidity: " << boundary.bkappa << endl;
         cout << "Stretching constant: " << boundary.sconstant << endl;
+	// this should be changed so that it is generally applicable, and not just for 10 nm
         cout << "Surface Tension constant: " << (boundary.sigma_a / 24.3053) << endl;
         cout << "Unstretched edge length: " << boundary.avg_edge_length
              << endl; // NB uncommented & replaced the output value.
