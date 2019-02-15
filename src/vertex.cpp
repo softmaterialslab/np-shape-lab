@@ -67,7 +67,6 @@ void VERTEX::stretching_forces(INTERFACE* boundary)
 // (2017.09.17 NB added.)  Compute the force on a given vertex due to the surface tension energy penalty:
 void VERTEX::tension_forces(INTERFACE* boundary)
 {
-
   //  The net surface tension force on a vertex is (sigma_a) * neg_GradAi:
   //TForce = ((2.0 * boundary->sigma_a * ((boundary->total_Area_Vertices / boundary->ref_Area_Vertices) - 1)) ^ neg_GradAi);  // Quadratic area difference from sphere.
   //TForce = ((2.0 * boundary->sigma_a * boundary->total_Area_Vertices / boundary->ref_Area_Vertices) ^ neg_GradAi);          // Quadratic in absolute area.
