@@ -98,16 +98,6 @@ public:
     VERTEX(VECTOR3D position = VECTOR3D(0, 0, 0)) : posvec(position) {
     }
 
-    // get the polar coordinates for the vertex
-    void get_polar() {
-        r = posvec.GetMagnitude();
-        theta = acos(posvec.z / r);
-        phi = posvec.y > 0 ? acos(posvec.x / sqrt(r * r - posvec.z * posvec.z)) : 2 * pi - acos(posvec.x / sqrt(r * r -
-                                                                                                                posvec.z *
-                                                                                                                posvec.z));
-        return;
-    }
-
     // update velocity of the vertex
     void update_real_velocity(double dt, THERMOSTAT main_bath, long double expfac) {
         velvec = ((velvec ^ (expfac)) + (forvec ^ (0.5 * dt * sqrt(expfac))));
@@ -126,6 +116,16 @@ public:
         return;
     }
 
+    /*Unused Functions:
+    // get the polar coordinates for the vertex
+    void get_polar() {
+        r = posvec.GetMagnitude();
+        theta = acos(posvec.z / r);
+        phi = posvec.y > 0 ? acos(posvec.x / sqrt(r * r - posvec.z * posvec.z)) : 2 * pi - acos(posvec.x / sqrt(r * r -
+                                                                                                                posvec.z *
+                                                                                                                posvec.z));
+        return;
+    }*/
 };
 
 #endif
