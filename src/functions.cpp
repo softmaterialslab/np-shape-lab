@@ -22,12 +22,11 @@ void initialize_vertex_velocities(vector<VERTEX> &V, vector<THERMOSTAT> &bath) {
             cout << "No thermostat for real system" << endl;
         return;
     }
-    double p_sigma = sqrt(kB * bath[0].T / (V[0].m)); // Maxwell dist width; NB removed denom factor of 2.
+    double p_sigma = sqrt(kB * bath[0].T / (/* 2 * */ V[0].m)); // Maxwell dist width; NB removed denom factor of 2.
     UTILITY ugsl;                                               // With that denom factor of 2, it starts at (T_target/2).
     for (unsigned int i = 0;
          i < V.size(); i++)                 // Starting at T_target seems to help stability at times.
-        V[i].velvec = VECTOR3D(0, 0,
-                               0);//VECTOR3D(gsl_ran_gaussian(ugsl.r,p_sigma), gsl_ran_gaussian(ugsl.r,p_sigma), gsl_ran_gaussian(ugsl.r,p_sigma));	// initialized velocities
+        V[i].velvec = VECTOR3D(gsl_ran_gaussian(ugsl.r,p_sigma), gsl_ran_gaussian(ugsl.r,p_sigma), gsl_ran_gaussian(ugsl.r,p_sigma));	// initialized velocities
     VECTOR3D average_velocity_vector = VECTOR3D(0, 0, 0);
     for (unsigned int i = 0; i < V.size(); i++)
         average_velocity_vector = average_velocity_vector + V[i].velvec;
