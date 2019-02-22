@@ -37,39 +37,38 @@ const double lB_water = 0.714;							// Bjerrum length in water, in nanometers
 const double epsilon_water = 80;						// Dielectric constant of water
 const double room_temperature = 298;						// Room temperature in Kelvin
 
-const double unit_radius_sphere = 10;						// in nanometers
-const double unitenergy = 1.3807 * pow(10.0,-16) * room_temperature;		// Unit of energy (thermal energy at room temoperature in CGS)
+//const double unit_radius_sphere = 10;						// NB moved to specification in main.cpp and forwarded as arguments
+const double unitenergy = 1.3807 * pow(10.0,-16) * room_temperature;		// Unit of energy (thermal energy at room temperature in CGS)
 const double unitmass = 23 * 1.67 * pow(10.0, -24);				// Unit of mass (mass of sodium ion in CGS)
 const double kB = 1;								// Boltzmann constant in reduced units
 
-const double scalefactor = epsilon_water * lB_water / unit_radius_sphere;	//NOTE scaling of electrostatic interaction found erroneous (below) before
+//const double scalefactor = epsilon_water * lB_water / unit_radius_sphere;	//NOTE scaling of electrostatic interaction found erroneous (below) before
 
 // const double scalefactor = lB_water / unit_radius_sphere;			// Reduced units lead to this scale factor for Coloumb interaction
 
-class UTILITY 
+class UTILITY
 {
-  public:
+public:
     long seed;
     const gsl_rng_type * T;
     gsl_rng * r;
-    
-    UTILITY() 
+
+    UTILITY()
     {
-      gsl_rng_env_setup();
-      T = gsl_rng_default;
-      r = gsl_rng_alloc(T);
-      
+        gsl_rng_env_setup();
+        T = gsl_rng_default;
+        r = gsl_rng_alloc(T);
+
 //       srand((time(0)));                	// srand & time are built-in
 //       unsigned long int s = random();  	// gsl_rng_uniform will eventually
 //       gsl_rng_set(r,s); 		// seed the random number generator;
-      
+
     }
-    
-    ~UTILITY() 
+
+    ~UTILITY()
     {
-      gsl_rng_free(r);
+        gsl_rng_free(r);
     }
 };
 
 #endif
-

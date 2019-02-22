@@ -58,7 +58,7 @@ Testing parameters: echo 3 4 100 35 0.0001 300 0.8 0 1 1
 using namespace boost::program_options;
 
 // Declaring function to initiate and propagate the MD (NB added char = constraint flag):
-void md_interface(INTERFACE &, vector<THERMOSTAT> &, CONTROL &, char, char);
+void md_interface(INTERFACE &, vector<THERMOSTAT> &, CONTROL &, char, char, const double scalefactor);
 
 //MPI boundary parameters
 unsigned int lowerBound;
@@ -73,7 +73,7 @@ mpi::environment env;
 mpi::communicator world;
 
 int main(int argc, const char *argv[]) {
-    // (2017.09.14 NB added.)  Delete the existing outfiles directory and any files it contains from a previous run, then recreate it empty.
+    // (2017.09.14 NB added.)  Delete existing outfiles directory if it exists, then recreate it empty.
     if (world.rank() == 0) {
         if (boost::filesystem::remove_all("outfiles") == 0) perror("Error deleting outfiles directory");
         else cout << "Pre-existing outfiles directory successfully, replaced with an empty directory." << endl;
@@ -82,14 +82,14 @@ int main(int argc, const char *argv[]) {
     // Declare variables to make the system:
     double ein = epsilon_water;        // permittivity of inside medium
     double eout = epsilon_water;        // permittivity of outside medium
-    double T, Q, dt;                        // Temperature of the system, mass of thermostate (0 if inactive), timestep.
+    double T, Q;                        // Temperature of the system, mass of thermostate (0 if inactive), timestep.
     unsigned int chain_length_real;    // length of nose-hoover thermostat chain, 1 minimum, 1 means no thermostat
 
     INTERFACE boundary;                    // interface (modelled as soft LJ wall)
     unsigned int disc1, disc2;
     double lambda_a, lambda_v;          // lambdas measuring strength of area & volume constraints  (unused)
 
-    double q_strength, alpha, conc_out, z_out; // net charge (if all charged), fractional q-occupancy, salt conc (MOLAR), salt valency
+    double unit_radius_sphere, youngsModulus, q_strength, alpha, conc_out, z_out; // radius (in nm), net charge (if all charged), fractional q-occupancy, salt conc (MOLAR), salt valency
     char offFlag, geomConstraint, constraintForm;
 
     // Control of the dynamics:
@@ -99,31 +99,44 @@ int main(int argc, const char *argv[]) {
     options_description desc("Usage:\nrandom_mesh <options>");
     desc.add_options()
             ("help,h", "print usage message")
+                // Physical Parameters:
+            ("unitRadius,R", value<double>(&unit_radius_sphere)->default_value(10),
+             "Radius of the initial sphere & simulation unit of length (in nanometers).")
             ("netCharge,q", value<double>(&q_strength)->default_value(900),
-             "Net charge on the particle if fully occupied (elementary charges).")    // enter in nanometers
+             "Net NP charge, if fully occupied (elementary charges).")
             ("saltConc,c", value<double>(&conc_out)->default_value(0.02),
-             "The bulk salt concentration (Molar).")
+             "Salt concentration (Molar).")
             ("tensSigma,t", value<double>(&boundary.sigma_a)->default_value(3),
-             "The surface tension constant (dynes/cm).")
+             "Surface tension constant (dynes/cm).")
             ("bending,b", value<double>(&boundary.bkappa)->default_value(30),
-             "The bending modulus of the particle.")
-            ("stretch,s", value<double>(&boundary.sconstant)->default_value(30),
-             "The stretching modulus of the particle.")
-            ("initTemp,T", value<double>(&T)->default_value(0.01),
-             "The target initial temperature (prior to annealing).")
-            ("timestep,d", value<double>(&mdremote.timestep)->default_value(0.001), "time step used in simulation")
+             "The bending modulus of the particle (kB*T).")
+            ("Stretching,s", value<double>(&boundary.sconstant)->default_value(100),
+             "Reduced stretching modulus of the particle (kB*T/R0^2).")
+                // Virtual Parameters:
+            ("totalTime,S", value<int>(&mdremote.steps)->default_value(250000),
+             "Duration of the simulation (total timesteps).")
+            ("timestep,d", value<double>(&mdremote.timestep)->default_value(0.001),
+             "Time step used in the simulation.")
+            ("initTemp,T", value<double>(&T)->default_value(0.005),
+             "Target initial temperature (prior to annealing).")
+            ("disc2,D", value<unsigned int>(&disc2)->default_value(8),
+             "Discretization parameter 2")
+            ("chain_length_real,C", value<unsigned int>(&chain_length_real)->default_value(5),
+             "Number of thermostat particles in the Nose-Hoover chain (plus 1).")
+            ("thermostatMass,Q", value<double>(&Q)->default_value(10*T),
+             "Mass of the thermostat (higher means less strongly coupled).")
+                // Annealing Parameters:
+            ("annealFlag,a", value<char>(&mdremote.anneal)->default_value('y'),
+             "If annealing occurs or not ('y' for yes).")
             ("anneal_freq,f", value<int>(&mdremote.annealfreq)->default_value(50000),
-             "Interval number of steps between which annealing commences")
+             "Interval number of steps between which annealing commences.")
             ("anneal_dura,u", value<int>(&mdremote.annealDuration)->default_value(1),
              "Number of steps over which to reduce (T = fT*T) & (Q = fQ*Q), same as before if 1")
             ("anneal_Tfac,e", value<double>(&mdremote.TAnnealFac)->default_value(1.25),
              "Fold reduction to temperature at initial annealing call.  Was 10 before (and constant throughout)")
+                // Runtime & Output Parameters:
             ("offFlag,o", value<char>(&offFlag)->default_value('n'),
              "If predefined shape used or not ('y' for yes).")
-            ("annealFlag,a", value<char>(&mdremote.anneal)->default_value('y'),
-             "If annealing occurs or not ('y' for yes).")
-            ("totalTime,S", value<int>(&mdremote.steps)->default_value(250000),
-             "The duration of the simulation (total timesteps).")
             ("moviestart,m", value<int>(&mdremote.moviestart)->default_value(1),
              "The starting point of the movie")
             ("offfreq,F", value<int>(&mdremote.offfreq)->default_value(2500),
@@ -132,51 +145,47 @@ int main(int argc, const char *argv[]) {
              "The frequency of shooting the movie")
             ("povfreq,P", value<int>(&mdremote.povfreq)->default_value(100000),
              "The frequency of making povray files")
-            ("writedata,W", value<int>(&mdremote.writedata)->default_value(2500),
-             "frequency of dumping thermo time series (after 1K steps)")
-            ("disc2,D", value<unsigned int>(&disc2)->default_value(8),
-             "Discretization parameter 2");
-
+            ("writedata,W", value<int>(&mdremote.writedata)->default_value(1000),
+             "frequency of dumping thermo time series (after 1K steps)");
 
     variables_map vm;
     store(parse_command_line(argc, argv, desc), vm);
     notify(vm);
 
-    //cin >> q_strength >> conc_out >> boundary.sigma_a >> boundary.bkappa >> boundary.sconstant >> total_time >> T >> annealFlag;
-    disc1 = 3;                                          //  Discretization parameters (h, k).
-    //disc2 = 4;
-    //q_strength = 800;                                   //  Bare membrane net charge (if fully occupied).
-    alpha = 1.0;                                        //  Fractional charge occupancy.
-    //conc_out = 0.06;                                    //  Salt concentration in Molar.
-    //boundary.sigma_a = 3;                               //  Desired tension in (dyne/cm) (multiplier enforces this below).
-    //boundary.bkappa = 30;                               //  Reduced bending modulus.
-    //boundary.sconstant = 30;                            //  Reduced stretching modulus.
-    //total_time = 250000;                              // Net number of timesteps.
-    chain_length_real = 5;                            //  Number of global entities (C = thermostat count + 1).
-    //T = 0.0005;                                         // Target temperature of thermostat (if C != 1).
-    if (chain_length_real == 1) Q = 0;                 //  Reduced mass of the thermostat particle(s).
-    else Q = 10 * T;                                     // Thermostat mass must be set to zero for safety if (C = 1).
+    // Compute the 2D Young's Modulus (in kB*T/nm^2) from the reduced stretching constant specified as input:
+    youngsModulus = boundary.sconstant / (unit_radius_sphere * unit_radius_sphere);  // For information purposes only.
 
-    boundary.sigma_a = (24.3053 * boundary.sigma_a);    //  Coefficient is 1 (dyne/cm) in (kB T_room/(10nm^2)).
+    // The dimensionless form of the surface tension factor (sigma) is a function of radius:
+    double dynePerCm_Scalefactor = pow(10,-14)*unit_radius_sphere*unit_radius_sphere/unitenergy;
+    boundary.sigma_a = (dynePerCm_Scalefactor * boundary.sigma_a);    // Coefficient is 1 (dyne/cm) in (kB T_room/(R0 nm^2)).
+
+    // The scale factor for electrostatic interactions is a function of radius:
+    const double scalefactor = epsilon_water * lB_water / unit_radius_sphere;
+
+    disc1 = 3;                                          //  Discretization parameters (h, k).
+    alpha = 1.0;                                        //  Fractional charge occupancy.
+    if (chain_length_real == 1) Q = 0;                  //  Reduced mass of the thermostat particle(s).
+    else Q = 10 * T;        // Thermostat mass must be set to zero for safety if (C = 1).
+
     mdremote.QAnnealFac =
-            1.00 + (mdremote.TAnnealFac / 10.0);  // Maintain previous scaling, same as before (fQ = 2) if fT = 10.
+            1.00 + (mdremote.TAnnealFac / 10.0);        // Maintain previous scaling, same as before (fQ = 2) if fT = 10.
 
     // Constrain the dynamics:
-    geomConstraint = 'V';
-    constraintForm = 'L';
+    geomConstraint = 'V';                               // Constrain the volume.
+    constraintForm = 'L';                               // Enforce a linear constraint (not quadratic).
 
     // ### Simulation setup: ###
     // Unused quantities for antiquated constraints & energy functionals:
     lambda_v = 0;                        // hardwiring volume constraint. Unused.
     lambda_a = 0;                        // hardwiring area constraint. Unused.
-    boundary.lambda_l = 0;            // forgot what was this?!  NB:  I think its an edge line tension force. Unused.
+    boundary.lambda_l = 0;            // forgot what was this?!  NB:  I think it's an edge line tension force. Unused.
     boundary.lj_length = 0.1;         // Reduced LJ diameter associated with vertex; safety reasons, rare to come near as they repel.
 
     // Electrostatics setup (membrane, implicit salt ions):
     z_out = 1;                        // Valency of implicit (salt) ions.
     boundary.ein = ein;               // Permittivity inside the membrane.
     boundary.eout = eout;             // Permittivity outside the membrane.  (Both equal by default.)
-    boundary.set_up();
+    boundary.set_up(unit_radius_sphere);
     // Assigning the Debye length outside (in reduced units):
     if (conc_out == 0)
         boundary.inv_kappa_out = 100000000;  // Effectively infinite, no screening.
@@ -243,8 +252,9 @@ int main(int argc, const char *argv[]) {
         cout << "Total intial vertex area: " << boundary.total_Area_Vertices << "  Sphere area: " << 4 * pi
              << "  Ref area: " << boundary.ref_Area_Vertices << endl;
         cout << "Bending rigidity: " << boundary.bkappa << endl;
+        cout << "Young's Modulus (2D): " << youngsModulus << endl;
         cout << "Stretching constant: " << boundary.sconstant << endl;
-        cout << "Surface Tension constant: " << (boundary.sigma_a / 24.3053) << endl;
+        cout << "Surface Tension constant: " << (boundary.sigma_a / dynePerCm_Scalefactor) << endl;
         cout << "Unstretched edge length: " << boundary.avg_edge_length
              << endl; // NB uncommented & replaced the output value.
         cout << "LJ strength: " << boundary.elj << endl;
@@ -287,10 +297,9 @@ int main(int argc, const char *argv[]) {
         list_out << "Total intial vertex area: " << boundary.total_Area_Vertices << "  Sphere area: " << 4 * pi
                  << "  Ref area: " << boundary.ref_Area_Vertices << endl;
         list_out << "Bending rigidity: " << boundary.bkappa << endl;
+        list_out << "Young's Modulus (2D): " << youngsModulus << endl;
         list_out << "Stretching constant: " << boundary.sconstant << endl;
-        list_out << "Surface Tension constant: " << (boundary.sigma_a / 24.3053) << endl;
-        list_out << "Unstretched edge length: " << boundary.avg_edge_length
-                 << endl; // NB uncommented & replaced the output value.
+        list_out << "Surface Tension constant: " << (boundary.sigma_a / dynePerCm_Scalefactor) << endl;
         list_out << "LJ strength: " << boundary.elj << endl;
         list_out << "LJ distance cutoff: " << boundary.lj_length << endl;
 
@@ -321,7 +330,7 @@ int main(int argc, const char *argv[]) {
     // Initiate MD of the boundary/membrane:
     boundary.dressup(lambda_a, lambda_v);
     boundary.output_configuration();    // NB added.  More information on the initial state.
-    boundary.compute_local_energies();  // NB added to output energy profiles pre-MD & rename the files to avoid conflict.
+    boundary.compute_local_energies(scalefactor);  // NB added to output energy profiles pre-MD & rename the files to avoid conflict.
     if (world.rank() == 0) {
         rename("outfiles/local_electrostatic_E.off", "outfiles/local_electrostatic_E_initial.off");
         rename("outfiles/local_elastic_E.off", "outfiles/local_elastic_E_initial.off");
@@ -341,8 +350,8 @@ int main(int argc, const char *argv[]) {
         upperBound = boundary.V.size() - 1;
     }
 
-    md_interface(boundary, real_bath, mdremote, geomConstraint, constraintForm);
-    boundary.compute_local_energies();
+    md_interface(boundary, real_bath, mdremote, geomConstraint, constraintForm, scalefactor);
+    boundary.compute_local_energies(scalefactor);
 
     return 0;
 }

@@ -6,16 +6,16 @@
 #include "newenergies.h"
 
 void md_interface(INTERFACE &boundary, vector<THERMOSTAT> &real_bath, CONTROL &cpmdremote, char geomConstraint,
-                  char constraintForm) {
+                  char constraintForm, const double scalefactor) {
 
     double percentage = 0, percentagePre = -1;
 
     // Initialize the velocities to either the initial temperature or zero (choose which to comment out):
-    initialize_vertex_velocities(boundary.V, real_bath);
-    //initialize_vertex_velocities_to_zero(boundary.V);
+    //initialize_vertex_velocities(boundary.V, real_bath);
+    initialize_vertex_velocities_to_zero(boundary.V);
 
     // ### Calculate the intial net force on all vertices: ###
-    force_calculation_init(boundary);
+    force_calculation_init(boundary, scalefactor);
 
     double expfac_real;
 
@@ -29,7 +29,7 @@ void md_interface(INTERFACE &boundary, vector<THERMOSTAT> &real_bath, CONTROL &c
 
     // (NB added.) Compute each & save pre-constraint, pre-MD {momentum, temp, net E}:
     vertex_kinetic_energy(boundary.V);
-    boundary.compute_energy(0);
+    boundary.compute_energy(0, scalefactor);
     VECTOR3D total_momentum = VECTOR3D(0, 0, 0);
     for (unsigned int i = 0; i < boundary.V.size(); i++)
         total_momentum += boundary.V[i].velvec;
@@ -57,7 +57,7 @@ void md_interface(INTERFACE &boundary, vector<THERMOSTAT> &real_bath, CONTROL &c
     // Recompute the same quantities as above, assign post-constraint variables for comparison:
     long double vertex_ke = vertex_kinetic_energy(boundary.V);
 
-    boundary.compute_energy(0);
+    boundary.compute_energy(0, scalefactor);
     total_momentum = VECTOR3D(0, 0, 0);
     for (unsigned int i = 0; i < boundary.V.size(); i++)
         total_momentum += boundary.V[i].velvec;
@@ -129,7 +129,7 @@ void md_interface(INTERFACE &boundary, vector<THERMOSTAT> &real_bath, CONTROL &c
         */
 
         // ### Compute Forces ###
-        force_calculation(boundary);
+        force_calculation(boundary, scalefactor);
 
         // Propagate velocity (second half time step):
         for (unsigned int i = 0; i < boundary.V.size(); i++)
@@ -152,10 +152,10 @@ void md_interface(INTERFACE &boundary, vector<THERMOSTAT> &real_bath, CONTROL &c
 
         // ### Output file updates: ###
         // Output the series data at the specified interval:
-        if (num % cpmdremote.writedata == 0) {
+        if (num % cpmdremote.writedata == 0 || num < 1000) {
             // Compute & output the membrane-wide and global energies (energy_nanomembrane quantities):
 
-            boundary.compute_energy(num);
+            boundary.compute_energy(num, scalefactor);
             double real_bath_ke = bath_kinetic_energy(real_bath);
             double real_bath_pe = bath_potential_energy(real_bath);
 
@@ -166,11 +166,11 @@ void md_interface(INTERFACE &boundary, vector<THERMOSTAT> &real_bath, CONTROL &c
                             << setw(15) << real_bath_pe << endl;
 
                 // Print the initial and current net energy, along with the drift (their ratio):
-                cout << "(" << num << ")" << "\tInitial Net Energy: " << initNetEnergy << "\t & \t Current Net Energy: "
+/*                cout << "(" << num << ")" << "\tInitial Net Energy: " << initNetEnergy << "\t & \t Current Net Energy: "
                      << (boundary.energy + bath_kinetic_energy(real_bath) + bath_potential_energy(real_bath))
                      << "\t & \t Drift: "
                      << ((boundary.energy + bath_kinetic_energy(real_bath) + bath_potential_energy(real_bath)) /
-                         initNetEnergy) << "." << endl;
+                         initNetEnergy) << "." << endl;*/
 
                 // Compute and output the face-based net area & volumes:
                 list_area << num << setw(15) << boundary.total_area << endl;
@@ -281,7 +281,7 @@ void md_interface(INTERFACE &boundary, vector<THERMOSTAT> &real_bath, CONTROL &c
                    initNetEnergy) < 0.95))
             abort();
 
-        //percentage calculation
+        // Percentage calculation (for progress bar):
         if (world.rank() == 0) {
             percentage = roundf(num / (double) cpmdremote.steps * 100 * 10) / 10;
             //percentage output
