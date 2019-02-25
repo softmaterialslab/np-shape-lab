@@ -58,7 +58,7 @@ Testing parameters: echo 3 4 100 35 0.0001 300 0.8 0 1 1
 using namespace boost::program_options;
 
 // Declaring function to initiate and propagate the MD (NB added char = constraint flag):
-void md_interface(INTERFACE &, vector<THERMOSTAT> &, CONTROL &, char, char, const double scalefactor);
+void md_interface(INTERFACE &, vector<THERMOSTAT> &, CONTROL &, char, char, const double);
 
 //MPI boundary parameters
 unsigned int lowerBound;
