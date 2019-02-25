@@ -97,7 +97,7 @@ public:
     EDGE *edge_between(VERTEX *, VERTEX *);
 
     // ### Geometric operations: ###
-    void set_up();
+    void set_up(double);
 
     void load_configuration(string filename);
 
@@ -109,7 +109,7 @@ public:
 
     void
     output_configuration();                                // Function to output information on the initial membrane.
-    void assign_boundary_edges();                                // Not used.
+    void assign_boundary_edges();                            // Not used.
     void update_velocity_interface();                        // Not used.
     void update_position_interface();                        // Not used.
 
@@ -122,9 +122,8 @@ public:
 
     // ###  Energy computation operations: ###
     void
-    compute_local_energies();                            // (O) Computes the local energetics profiles (creates local_*_E.off files).
-    void compute_energy(
-            int);                                        // Commputes energy of the system {KE_, PE_parts, PE_net, Membrane_net}.
+    compute_local_energies(const double scalefactor);                            // (O) Computes the local energetics profiles (creates local_*_E.off files).
+    void compute_energy(int, const double scalefactor);                                        // Commputes energy of the system {KE_, PE_parts, PE_net, Membrane_net}.
 
     INTERFACE(double _ein = 1,
               double _eout = 1, double _lambda_a = 1, double _lambda_v = 1,

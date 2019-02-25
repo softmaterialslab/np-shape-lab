@@ -7,8 +7,6 @@
 #include <list>
 #include <sstream>
 
-//extern double alpha;
-
 double colormap(double x, double *r, double *g, double *b, double *a) {
     (*r) = 0;
     (*g) = x;
@@ -16,7 +14,7 @@ double colormap(double x, double *r, double *g, double *b, double *a) {
     (*a) = 1;
 }
 
-void INTERFACE::set_up() {
+void INTERFACE::set_up(double unit_radius_sphere) {
     // useful combinations of different dielectric constants (inside and outside)
     em = 0.5 * (ein + eout);
     ed = (eout - ein) / (4 * pi);
@@ -357,7 +355,7 @@ void INTERFACE::assign_dual_boundary_edges() {
     }
 }
 
-// NB has not changed this functional at all; it is exactly as originally received in May 2017.
+//  NB has not changed this functional at all; it is exactly as originally received in May 2017.
 void INTERFACE::assign_q_values(int num_divisions, double q_strength) {
     unsigned int i;
     vector<pair<double, int> > permutations;
@@ -501,7 +499,7 @@ void INTERFACE::assign_random_q_values(int num_divisions, double q_strength, dou
 }
 
 // Compute the spatial energetics profiles on the membrane (elastic, electrostatic), say for visualization:
-void INTERFACE::compute_local_energies() {
+void INTERFACE::compute_local_energies(const double scalefactor) {
     ofstream es_output("outfiles/local_electrostatic_E.off", ios::out);
     if (world.rank() == 0)
         es_output << "OFF\n" << V.size() << " "
@@ -509,7 +507,7 @@ void INTERFACE::compute_local_energies() {
     vector<double> es_energy(F.size(), 0);
     for (unsigned int i = 0; i < V.size(); i++)
         for (unsigned int j = i + 1; j < V.size(); j++) {
-            double cur_E = energy_es_vertex_vertex(V[i], V[j], em, inv_kappa_out);
+            double cur_E = energy_es_vertex_vertex(V[i], V[j], em, inv_kappa_out, scalefactor);
             for (int k = 0; k < V[i].itsF.size(); k++)
                 es_energy[V[i].itsF[k]->index] += cur_E;
             for (int k = 0; k < V[j].itsF.size(); k++)
@@ -609,7 +607,7 @@ void INTERFACE::compute_local_energies() {
 
 // Compute the membrane-wide energies at a given step (num), component-wise {kinetic, BE, SE, TE, LJ, ES} respectively:
 // This produces the "energy_in_parts" output file and calculates the quantities used in "energy_nanomembrane".
-void INTERFACE::compute_energy(int num) {
+void INTERFACE::compute_energy(int num, const double scalefactor) {
 
     // Initialize & compute net kinetic energy:
     kenergy = 0;
@@ -678,7 +676,7 @@ void INTERFACE::compute_energy(int num) {
         for (j = 0; j < V.size(); j++) {
             if (i == j) continue;
             lj_total_temp += energy_lj_vertex_vertex(V[i], V[j], lj_length, elj);
-            es_total_temp += energy_es_vertex_vertex(V[i], V[j], em, inv_kappa_out);
+            es_total_temp += energy_es_vertex_vertex(V[i], V[j], em, inv_kappa_out, scalefactor);
         }
         energyLJ [i-lowerBound] = 0.5 * lj_total_temp ;
         energyES[i-lowerBound] = 0.5 * es_total_temp;

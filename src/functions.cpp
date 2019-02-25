@@ -41,6 +41,7 @@ void initialize_vertex_velocities_to_zero(vector<VERTEX> &V) {
     for (unsigned int i = 0; i < V.size(); i++) {
         V[i].velvec = VECTOR3D(0, 0, 0);
     }
+    VECTOR3D average_velocity_vector = VECTOR3D(0, 0, 0);
 }
 
 // interface movie for VMD

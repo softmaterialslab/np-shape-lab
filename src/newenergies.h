@@ -36,6 +36,6 @@ inline double bath_potential_energy(vector<THERMOSTAT>& bath)
 }
 
 double energy_lj_vertex_vertex(VERTEX&, VERTEX&, double, double);
-double energy_es_vertex_vertex(VERTEX&, VERTEX&, double, double);
+double energy_es_vertex_vertex(VERTEX&, VERTEX&, double, double, const double);
 
 #endif

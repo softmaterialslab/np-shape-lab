@@ -1,7 +1,7 @@
 #include "newforces.h"
 #include "functions.h"
 
-void force_calculation_init(INTERFACE &boundary) {
+void force_calculation_init(INTERFACE &boundary, const double scalefactor) {
     unsigned int i=0, j=0;
 
 // Compute constraint gradients: (called 'forces' in prev comment & in SHAKE, RATTLE.)
@@ -56,11 +56,9 @@ void force_calculation_init(INTERFACE &boundary) {
         boundary.V[i].tension_forces(&boundary);
         boundary.V[i].forvec += boundary.V[i].TForce;
     }
-
-
 }
 
-void force_calculation(INTERFACE &boundary) {
+void force_calculation(INTERFACE &boundary, const double scalefactor) {
 
     //Common MPI Message objects
     vector<VECTOR3D> forvec(sizFVec, VECTOR3D(0, 0, 0));
