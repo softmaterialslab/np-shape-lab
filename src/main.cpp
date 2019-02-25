@@ -82,7 +82,7 @@ int main(int argc, const char *argv[]) {
     // Declare variables to make the system:
     double ein = epsilon_water;        // permittivity of inside medium
     double eout = epsilon_water;        // permittivity of outside medium
-    double T, Q;                        // Temperature of the system, mass of thermostate (0 if inactive), timestep.
+    double T, Q;                        // Temperature of the system, mass of thermostate (0 if inactive).
     unsigned int chain_length_real;    // length of nose-hoover thermostat chain, 1 minimum, 1 means no thermostat
 
     INTERFACE boundary;                    // interface (modelled as soft LJ wall)
