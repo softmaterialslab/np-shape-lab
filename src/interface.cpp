@@ -589,7 +589,7 @@ void INTERFACE::compute_local_energies(const double scalefactor) {
     for (unsigned int i = 0; i < F.size(); i++) {
         double r, g, b, a;
         //colormap((elastic_energy[F[i].index] - min_E) / (max_E - min_E), &r, &g, &b, &a); // This is VJ's original version, shifted & normalized.
-        colormap((elastic_energy[F[i].index] - min_E) / (max_E - min_E), &r, &g, &b,
+        colormap(elastic_energy[F[i].index], &r, &g, &b,
                  &a);   // NB absolute value version.
         if (world.rank() == 0)
             el_output << "3 "
