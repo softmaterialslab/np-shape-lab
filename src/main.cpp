@@ -58,7 +58,7 @@ Testing parameters: echo 3 4 100 35 0.0001 300 0.8 0 1 1
 using namespace boost::program_options;
 
 // Declaring function to initiate and propagate the MD (NB added char = constraint flag):
-void md_interface(INTERFACE &, vector<THERMOSTAT> &, CONTROL &, char, char, const double);
+void md_interface(INTERFACE &, vector<THERMOSTAT> &, CONTROL &, char, char, const double scalefactor);
 
 //MPI boundary parameters
 unsigned int lowerBound;
@@ -82,7 +82,7 @@ int main(int argc, const char *argv[]) {
     // Declare variables to make the system:
     double ein = epsilon_water;        // permittivity of inside medium
     double eout = epsilon_water;        // permittivity of outside medium
-    double T, Q;                        // Temperature of the system, mass of thermostate (0 if inactive).
+    double T, Q;                        // Temperature of the system, mass of thermostate (0 if inactive), timestep.
     unsigned int chain_length_real;    // length of nose-hoover thermostat chain, 1 minimum, 1 means no thermostat
 
     INTERFACE boundary;                    // interface (modelled as soft LJ wall)
@@ -330,11 +330,14 @@ int main(int argc, const char *argv[]) {
     // Initiate MD of the boundary/membrane:
     boundary.dressup(lambda_a, lambda_v);
     boundary.output_configuration();    // NB added.  More information on the initial state.
-    boundary.compute_local_energies(scalefactor);  // NB added to output energy profiles pre-MD & rename the files to avoid conflict.
+    /*boundary.compute_local_energies(scalefactor);  // Returns 'nan' at the moment as energies... should fix.
+    boundary.compute_local_energies_by_component();
     if (world.rank() == 0) {
         rename("outfiles/local_electrostatic_E.off", "outfiles/local_electrostatic_E_initial.off");
         rename("outfiles/local_elastic_E.off", "outfiles/local_elastic_E_initial.off");
-    }
+        rename("outfiles/local_stretching_E.off", "outfiles/local_stretching_E_initial.off");
+        rename("outfiles/local_bending_E.off", "outfiles/local_bending_E_initial.off");
+    }*/
     //MPI Boundary calculation for ions
     unsigned int rangeIons = boundary.V.size() / world.size() + 1.5;
     lowerBound = world.rank() * rangeIons;
@@ -352,6 +355,7 @@ int main(int argc, const char *argv[]) {
 
     md_interface(boundary, real_bath, mdremote, geomConstraint, constraintForm, scalefactor);
     boundary.compute_local_energies(scalefactor);
+    boundary.compute_local_energies_by_component();
 
     return 0;
 }

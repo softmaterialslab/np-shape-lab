@@ -121,9 +121,9 @@ public:
     void assign_random_q_values(int num_divisions, double q_strength, double alpha);
 
     // ###  Energy computation operations: ###
-    void
-    compute_local_energies(const double scalefactor);                            // (O) Computes the local energetics profiles (creates local_*_E.off files).
-    void compute_energy(int, const double scalefactor);                                        // Commputes energy of the system {KE_, PE_parts, PE_net, Membrane_net}.
+    void compute_local_energies(const double scalefactor);  // (O) Computes the local energetics profiles (creates local_*_E.off files).
+    void compute_local_energies_by_component();             // Computes local elastic energy profiles (creates similar files to above).
+    void compute_energy(int, const double scalefactor);     // Commputes energy of the system {KE_, PE_parts, PE_net, Membrane_net}.
 
     INTERFACE(double _ein = 1,
               double _eout = 1, double _lambda_a = 1, double _lambda_v = 1,

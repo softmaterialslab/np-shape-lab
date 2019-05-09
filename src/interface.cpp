@@ -444,7 +444,7 @@ void INTERFACE::assign_random_q_values(int num_divisions, double q_strength, dou
         chargeStateList.push_back(0);
     }
     // Shuffle the list so it is randomly distributed:
-    srand(0/*time(0)*/);
+    srand(time(0));
     random_shuffle(chargeStateList.begin(), chargeStateList.end());
 
     // Previously, permutations & mismatched indices were used for pseudorandom scrambling.  This enforces a different and more random one each time.
@@ -479,7 +479,6 @@ void INTERFACE::assign_random_q_values(int num_divisions, double q_strength, dou
             V[permutations[i].second].q = q_strength * randomAreaList[i] / total_area;
     }
 
-    //assign_boundary_edges();
     assign_dual_boundary_edges();
 /*	if (0)
 	{
@@ -590,7 +589,7 @@ void INTERFACE::compute_local_energies(const double scalefactor) {
     for (unsigned int i = 0; i < F.size(); i++) {
         double r, g, b, a;
         //colormap((elastic_energy[F[i].index] - min_E) / (max_E - min_E), &r, &g, &b, &a); // This is VJ's original version, shifted & normalized.
-        colormap((elastic_energy[F[i].index] - min_E) / (max_E - min_E), &r, &g, &b,
+        colormap(elastic_energy[F[i].index], &r, &g, &b,
                  &a);   // NB absolute value version.
         if (world.rank() == 0)
             el_output << "3 "
@@ -603,6 +602,99 @@ void INTERFACE::compute_local_energies(const double scalefactor) {
                       << a << "\n";
     }
 
+}
+
+// Compute the spatial elastic energetics profiles per each component, separately:
+void INTERFACE::compute_local_energies_by_component() {
+    // Open the streams for both components:
+    ofstream el_output_bending("outfiles/local_bending_E.off", ios::out);
+    if (world.rank() == 0)
+        el_output_bending << "OFF\n" << V.size() << " "
+                  << F.size() << " " << E.size() << "\n";
+    ofstream el_output_stretching("outfiles/local_stretching_E.off", ios::out);
+    if (world.rank() == 0)
+        el_output_stretching << "OFF\n" << V.size() << " "
+                  << F.size() << " " << E.size() << "\n";
+
+    // Iterate over edges to determine both components:
+    vector<double> stretching_energy(E.size(), 0);
+    vector<double> bending_energy(E.size(), 0);
+    for (unsigned int i = 0; i < E.size(); i++) {
+        double stretched = (E[i].length() - E[i].l0);
+        double senergy = 0.5 * sconstant * stretched * stretched / (E[i].l0 * E[i].l0);
+        senergy *= avg_edge_length * avg_edge_length;
+        for (int k = 0; k < E[i].itsF.size(); k++)
+            stretching_energy[E[i].itsF[k]->index] += senergy;
+
+        double benergy = bkappa * (1 - E[i].itsS
+                                       / (4 * E[i].itsF[0]->itsarea * E[i].itsF[1]->itsarea));
+        for (int k = 0; k < E[i].itsF.size(); k++)
+            bending_energy[E[i].itsF[k]->index] += benergy;
+    }
+    if (world.rank() == 0)
+        for (unsigned int i = 0; i < V.size(); i++)
+            el_output_stretching << V[i].posvec.x << " "
+                      << V[i].posvec.y << " "
+                      << V[i].posvec.z << "\n";
+    if (world.rank() == 0)
+        for (unsigned int i = 0; i < V.size(); i++)
+            el_output_bending << V[i].posvec.x << " "
+                                 << V[i].posvec.y << " "
+                                 << V[i].posvec.z << "\n";
+    // Determine the maximum and minimum value for both components:
+    double min_E_stretching = 1e100;
+    double max_E_stretching = -1e100;
+    for (unsigned int i = 0; i < F.size(); i++) {
+        if (stretching_energy[i] < min_E_stretching)
+            min_E_stretching = stretching_energy[i];
+        if (stretching_energy[i] > max_E_stretching)
+            max_E_stretching = stretching_energy[i];
+    }
+    double min_E_bending = 1e100;
+    double max_E_bending = -1e100;
+    for (unsigned int i = 0; i < F.size(); i++) {
+        if (bending_energy[i] < min_E_bending)
+            min_E_bending = bending_energy[i];
+        if (bending_energy[i] > max_E_bending)
+            max_E_bending = bending_energy[i];
+    }
+
+    // Output min and max values for scale bars for each component:
+    if (world.rank() == 0)
+        cout << "stretching range" << "\t" << min_E_stretching << "\t" << max_E_stretching << endl;
+    // stretching
+    if (world.rank() == 0)
+        cout << "bending range" << "\t" << min_E_bending << "\t" << max_E_bending << endl;
+
+    // Output the final local profiles for each file:
+    for (unsigned int i = 0; i < F.size(); i++) {
+        double r, g, b, a;
+        //colormap((stretching_energy[F[i].index] - min_E_stretching) / (max_E_stretching - min_E_stretching), &r, &g, &b, &a); // This is VJ's original version, shifted & normalized.
+        colormap(stretching_energy[F[i].index], &r, &g, &b, &a);   // NB absolute value version.
+        if (world.rank() == 0)
+            el_output_stretching << "3 "
+                      << F[i].itsV[0]->index << " "
+                      << F[i].itsV[1]->index << " "
+                      << F[i].itsV[2]->index << " "
+                      << r << " "
+                      << g << " "
+                      << b << " "
+                      << a << "\n";
+    }
+    for (unsigned int i = 0; i < F.size(); i++) {
+        double r, g, b, a;
+        //colormap((bending_energy[F[i].index] - min_E_bending) / (max_E_bending - min_E_bending), &r, &g, &b, &a); // This is VJ's original version, shifted & normalized.
+        colormap(bending_energy[F[i].index], &r, &g, &b, &a);   // NB absolute value version.
+        if (world.rank() == 0)
+            el_output_bending << "3 "
+                                 << F[i].itsV[0]->index << " "
+                                 << F[i].itsV[1]->index << " "
+                                 << F[i].itsV[2]->index << " "
+                                 << r << " "
+                                 << g << " "
+                                 << b << " "
+                                 << a << "\n";
+    }
 }
 
 // Compute the membrane-wide energies at a given step (num), component-wise {kinetic, BE, SE, TE, LJ, ES} respectively:
