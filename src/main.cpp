@@ -197,6 +197,7 @@ int main(int argc, const char *argv[]) {
     boundary.discretize(disc1, disc2);            // discretize the interface
     if (disc1 != 0 || disc2 != 0)
         boundary.assign_random_q_values(1, q_strength, alpha);        // number of components input
+        //boundary.assign_external_q_values(q_strength);
 
     boundary.dressup(lambda_a, lambda_v);            // dress the interface with normals,...
 
