@@ -90,6 +90,8 @@ int main(int argc, const char *argv[]) {
     double lambda_a, lambda_v;          // lambdas measuring strength of area & volume constraints  (unused)
 
     double unit_radius_sphere, youngsModulus, q_strength, alpha, conc_out, z_out; // radius (in nm), net charge (if all charged), fractional q-occupancy, salt conc (MOLAR), salt valency
+    int numPatches;
+    double fracChargedPatch;
     char offFlag, geomConstraint, constraintForm;
 
     // Control of the dynamics:
@@ -112,6 +114,11 @@ int main(int argc, const char *argv[]) {
              "The bending modulus of the particle (kB*T).")
             ("Stretching,s", value<double>(&boundary.sconstant)->default_value(100),
              "Reduced stretching modulus of the particle (kB*T/R0^2).")
+                // Physical Parameters patterned(Janus & Striped) particles:
+            ("numPatches,N", value<int>(&numPatches)->default_value(1),
+             "The number of distinct charge patches (of tunable size if N = 2)")
+            ("fracChargePatch,p", value<double>(&fracChargedPatch)->default_value(0.5),
+             "Surface area fraction of the patch (if N = 2, otherwise irrelevant).")
                 // Virtual Parameters:
             ("totalTime,S", value<int>(&mdremote.steps)->default_value(250000),
              "Duration of the simulation (total timesteps).")
@@ -196,7 +203,7 @@ int main(int argc, const char *argv[]) {
     // Generate the membrane:
     boundary.discretize(disc1, disc2);            // discretize the interface
     if (disc1 != 0 || disc2 != 0)
-        boundary.assign_random_q_values(1, q_strength, alpha);        // number of components input
+        boundary.assign_random_q_values(q_strength, alpha, numPatches, fracChargedPatch); // number of components input
         //boundary.assign_external_q_values(q_strength);
 
     boundary.dressup(lambda_a, lambda_v);            // dress the interface with normals,...

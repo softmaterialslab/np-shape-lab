@@ -419,7 +419,7 @@ void INTERFACE::assign_q_values(int num_divisions, double q_strength) {
 }
 
 //  NB added function for pH (to distribute charge randomly); uniform for a = 1.0, equivalent to above but shuffled.
-void INTERFACE::assign_random_q_values(int num_divisions, double q_strength, double alpha) {
+void INTERFACE::assign_random_q_values(double q_strength, double alpha, int num_divisions, double fracChargedPatch) {
     unsigned int i;
     vector<pair<double, int> > permutations;
     for (i = 0; i < number_of_vertices; i++)
@@ -447,7 +447,7 @@ void INTERFACE::assign_random_q_values(int num_divisions, double q_strength, dou
     srand(0/*time(0)*/);
     random_shuffle(chargeStateList.begin(), chargeStateList.end());
 
-    // Previously, permutations & mismatched indices were used for pseudorandom scrambling.  This enforces a different and more random one each time.
+    // Previously, permutations & mismatched indices were used for pseudorandom scrambling.  This enforces a more random one.
     vector<double> randomAreaList;
     for (int i = 0; i < number_of_vertices; i++) {
         randomAreaList.push_back(V[i].itsarea); // Create the to-be-randomized vertex area list:
@@ -455,6 +455,8 @@ void INTERFACE::assign_random_q_values(int num_divisions, double q_strength, dou
 
     // Once generated, randomize the vertex area list (uses the same random seed based on time above):
     random_shuffle(randomAreaList.begin(), randomAreaList.end());
+
+    int nVertPerPatch = fracChargedPatch*V.size();
 
     if (num_divisions == 1)              // one section: uniformly charged
     {
@@ -464,13 +466,13 @@ void INTERFACE::assign_random_q_values(int num_divisions, double q_strength, dou
             else
                 V[permutations[i].second].q = 0;
     }
-    if (num_divisions == 2) {
-        for (i = 0; i < number_of_vertices / 2; i++)
-            V[permutations[i].second].q = q_strength * V[i].itsarea / total_area;
+    if (num_divisions == 2) {           //  two patch Janus, specifiable fractional coverage
+        for (i = 0; i < nVertPerPatch; i++)
+            V[permutations[i].second].q = q_strength * randomAreaList[i] / total_area;
         for (; i < number_of_vertices; i++)
             V[permutations[i].second].q = 0;
     }
-    if (num_divisions == 3) {
+    if (num_divisions == 3) {           //  n patch striped, approximately equal areas each about z-axis
         for (i = 0; i < number_of_vertices * (alpha / (num_divisions - 1)); i++)
             V[permutations[i].second].q = q_strength * randomAreaList[i] / total_area;
         for (; i < number_of_vertices * (1 - alpha / (num_divisions - 1)); i++)
