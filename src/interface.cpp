@@ -444,7 +444,7 @@ void INTERFACE::assign_random_q_values(int num_divisions, double q_strength, dou
         chargeStateList.push_back(0);
     }
     // Shuffle the list so it is randomly distributed:
-    srand(time(0));
+    srand(0/*time(0)*/);
     random_shuffle(chargeStateList.begin(), chargeStateList.end());
 
     // Previously, permutations & mismatched indices were used for pseudorandom scrambling.  This enforces a different and more random one each time.
@@ -495,6 +495,29 @@ void INTERFACE::assign_random_q_values(int num_divisions, double q_strength, dou
 				<< setw(2) << F[i].itsV[2]->index << "\n";
 		}
 	}*/
+}
+
+//  NB added function to import charge values from a file:
+void INTERFACE::assign_external_q_values(double q_strength) {
+    // Read data from a single specified file (within a for-loop iterating over all files).
+    char fileName[100];
+    int col1;
+    double col2;
+    sprintf(fileName, "infiles/Charge_Patterns/Output.txt");
+    ifstream inStream(fileName, ios::in);
+    if (!inStream)    // Verify the file could be opened.
+    {
+        cout << "Charge assignment file could not be opened.  Mesh will be uncharged." << endl;
+        for(int i = 0; i < V.size(); i++) {
+            V[i].q = 0;
+        }
+    } else                // Warn the file could not be opened.
+    {
+        cout << "Charge assignment file opened successfully.  Charging the mesh." << endl;
+        while(inStream >> col1 >> col2) {
+            V[col1].q = (q_strength / total_area)*col2;
+        }
+    }
 }
 
 // Compute the spatial energetics profiles on the membrane (elastic, electrostatic), say for visualization:

@@ -120,6 +120,8 @@ public:
 
     void assign_random_q_values(int num_divisions, double q_strength, double alpha);
 
+    void assign_external_q_values(double q_strength);
+
     // ###  Energy computation operations: ###
     void compute_local_energies(const double scalefactor);  // (O) Computes the local energetics profiles (creates local_*_E.off files).
     void compute_local_energies_by_component();             // Computes local elastic energy profiles (creates similar files to above).
