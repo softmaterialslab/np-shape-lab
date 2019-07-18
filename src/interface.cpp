@@ -517,7 +517,6 @@ void INTERFACE::assign_external_q_values(double q_strength) {
     {
         cout << "Charge assignment file opened successfully.  Charging the mesh." << endl;
         while(inStream >> col1 >> col2) {
-            //cout << col1 << " " << col2 << endl;
             V[col1].q = (q_strength / total_area)*col2;
         }
     }
