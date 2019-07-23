@@ -1,3 +1,0 @@
-The Boost-style specification of the parameters used here is:
-
--R 10 -q 600 -c 0.005 -t 0 -b 10 -s 100 -S 30000 -d 0.001 -T 0.02 -D 6 -C 5
