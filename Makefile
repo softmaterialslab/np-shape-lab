@@ -51,7 +51,8 @@ clean:
 	rm -f $(BIN)/$(PROG)
 
 dataclean:
-	rm -f $(BIN)/outfiles/*.dat $(BIN)/outfiles/*.xyz  $(BIN)/outfiles/*.lammpstrj
+	rm -f $(BIN)/outfiles/*.dat $(BIN)/outfiles/*.xyz  $(BIN)/outfiles/*.lammpstrj $(BIN)/outfiles/*.off $(BIN)/outfiles/*.out
+
 	rm -f $(BIN)/*.log
 	rm -f $(BIN)/*.pbs
 

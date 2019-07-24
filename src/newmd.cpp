@@ -86,7 +86,7 @@ void md_interface(INTERFACE &boundary, vector<THERMOSTAT> &real_bath, CONTROL &c
     long double fQ = pow((1.0 / cpmdremote.QAnnealFac), (1.0 /
                                                          cpmdremote.annealDuration));  // Fractional decrement that, when f^(annealDuration), yields (Q -> Q/2)
     if (world.rank() == 0)
-        cout << "Initial temperature annealing multiplier: " << fT << " Initial thermostat mass anenealing multiplier: "
+        cout << "Initial temperature annealing multiplier: " << fT << " Initial thermostat mass annealing multiplier: "
              << fQ << endl << endl;
 
     // Run the MD:
