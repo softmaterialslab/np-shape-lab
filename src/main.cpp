@@ -152,6 +152,7 @@ int main(int argc, const char *argv[]) {
     store(parse_command_line(argc, argv, desc), vm);
     notify(vm);
 
+
     // Compute the 2D Young's Modulus (in kB*T/nm^2) from the reduced stretching constant specified as input:
     youngsModulus = boundary.sconstant / (unit_radius_sphere * unit_radius_sphere);  // For information purposes only.
 
@@ -229,6 +230,21 @@ int main(int argc, const char *argv[]) {
 
     // NB added following lines to load off-file (does not warn if the file is not found, yet):
     if (offFlag == 'y') boundary.load_configuration("380000.off");
+
+
+    int numOfNodes = world.size();
+    if (world.rank() == 0) {
+#pragma omp parallel default(shared)
+        {
+            if (omp_get_thread_num() == 0) {
+                printf("The app comes with MPI and OpenMP (Hybrid) parallelization)\n");
+                printf("Number of MPI processes used %d\n", numOfNodes);
+                printf("Number of OpenMP threads per MPI process %d\n", omp_get_num_threads());
+                printf("Make sure that number of grid points / ions is greater than %d\n",
+                       omp_get_num_threads() * numOfNodes);
+            }
+        }
+    }
 
     if (world.rank() == 0) {
         // Define an output stream to provide the same things as the (*.out) file on the HPC cluster (minus run outputs):
