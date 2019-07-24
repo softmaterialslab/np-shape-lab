@@ -1,0 +1,42 @@
+===================
+Membrane
+===================
+Unit radius of the sphere (in nm): 10
+Number of vertices: 372
+Number of edges: 1110
+Number of faces: 740
+Lambda_v: 0
+Lambda_a: 0
+Lambda_l: 0
+Total intial volume: 4.12627  Sphere volume: 4.18879  Ref volume: 4.12627
+Total intial face area: 12.462  Sphere area: 12.5664  Ref area: 12.462
+Total intial vertex area: 12.462  Sphere area: 12.5664  Ref area: 12.462
+Bending rigidity: 40
+Young's Modulus (2D): 0.4
+Stretching constant: 40
+Surface Tension constant: 1
+LJ strength: 1
+LJ distance cutoff: 0.0196951
+
+===================
+Electrostatics
+===================
+Total charge on membrane: 600
+Fractional charge occupancy (alpha): 1
+Salt concentration: 0.005
+Debye length: 0.430129
+Bjerrum length: 0.0714
+
+===================
+Thermodynamics
+===================
+Initial Temperature (T): 0.005
+Thermostat mass (Q): 0.05
+Number of thermostats (C): 5
+Timestep (dt): 0.001  &  Total steps: 25000.
+Annealing: y
+Anneal frequency: 50000
+Anneal duration: 1
+Temperature annealing decrement: 1.25
+Thermostat mass decrement: 1.125
+Off-file loaded: n

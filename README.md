@@ -25,10 +25,11 @@
 ```cd np-shape-lab```
 * Then, install the project:
 ```make all```
+* This should create np_shape_lab executable in the bin directory
 
 ## Testing
 ### Homogeneously-charged Disc Formation:
-* A reference set of parameters for testing homogeneously charged disc formation are:
+* A reference set of parameters for testing homogeneously charged disc formation are provided below in the complete executable command:
 * -R 10 -q 600 -c 0.005 -t 1 -b 40 -s 40 -S 25000 -D 4
 * Respectively, these are the (radius (in nm), net charge (in e), salt concentration (in Molar), surface tension (in dyn/cm), bending rigidity (in kBT), stretching rigidity (in kBT), net number of steps, and discretization parameter).
 * After about 10 mintues, this should produce a disc of final reduced area (A = 15.69), local potential (U = 2625.28 kB T), and conserved total energy (E = 2689.97 kB T).
