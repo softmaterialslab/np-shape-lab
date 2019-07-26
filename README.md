@@ -38,7 +38,7 @@
 ### Homogeneously-charged Rod Formation:
 * Simply increasing the salt concentration allows for testing homogeneously charged rod formation using the command below:
 * time ./np_shape_lab -R 10 -q 600 -c 0.010 -t 1 -b 40 -s 40 -S 25000 -D 4
-* After a few minutes, this should produce a rod of final reduced area (A = 15.89), local potential (U = 1920.93 kB T), and conserved total energy (E = 1932.3 kB T).
+* After a few minutes, this should produce a rod of final reduced area (A = 15.98), local potential (U = 1921.19 kB T), and conserved total energy (E = 1932.3 kB T).
 
 ### Inhomogeneously-charged Hemisphere Formation:
 * The same parameters may be used to test hemisphere formation with two added parameters (N) and (p):
