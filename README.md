@@ -44,4 +44,4 @@
 * The same parameters may be used to test hemisphere formation with two added parameters (N) and (p):
 * time ./np_shape_lab -R 10 -q 600 -N 2 -p 0.5 -c 0.005 -t 1 -b 40 -s 40 -S 25000 -D 4
 * Respectively, the new parameters specify the collective number of stripes (N) and the fractional area of the charged patch (p), such that (p = 0.5) is a standard Janus particle.  The charge (q) now specifies the charge were it homogeneously charged, effectively specifying a charge density in the charged region.
-* After about a few minutes, this should produce a hemisphere of unchanged final reduced area (A = 12.51), local potential (U = 1224.04 kB T), and conserved total energy (E = 1457.35).
+* After a few minutes, this should produce a hemisphere of unchanged final reduced area (A = 12.51), local potential (U = 1224.04 kB T), and conserved total energy (E = 1457.35).
