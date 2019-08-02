@@ -130,7 +130,7 @@ int main(int argc, const char *argv[]) {
              "Discretization parameter 2")
             ("chain_length_real,C", value<unsigned int>(&chain_length_real)->default_value(5),
              "Number of thermostat particles in the Nose-Hoover chain (plus 1).")
-            ("thermostatMass,Q", value<double>(&Q)->default_value(10*T),
+            ("thermostatMass,Q", value<double>(&Q)->default_value(.01),
              "Mass of the thermostat (higher means less strongly coupled).")
                 // Annealing Parameters:
             ("annealFlag,a", value<char>(&mdremote.anneal)->default_value('y'),
@@ -172,8 +172,7 @@ int main(int argc, const char *argv[]) {
 
     disc1 = 3;                                          //  Discretization parameters (h, k).
     alpha = 1.0;                                        //  Fractional charge occupancy.
-    if (chain_length_real == 1) Q = 0;                  //  Reduced mass of the thermostat particle(s).
-    else Q = 10 * T;        // Thermostat mass must be set to zero for safety if (C = 1).
+    if (chain_length_real == 1) Q = 0;                  //  Reduced mass of the thermostat particle(s)
 
     mdremote.QAnnealFac =
             1.00 + (mdremote.TAnnealFac / 10.0);        // Maintain previous scaling, same as before (fQ = 2) if fT = 10.
