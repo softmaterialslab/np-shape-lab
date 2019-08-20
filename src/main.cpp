@@ -110,8 +110,8 @@ int main(int argc, const char *argv[]) {
              "Salt concentration (Molar).")
             ("tensSigma,t", value<double>(&boundary.sigma_a)->default_value(3),
              "Surface tension constant (dynes/cm).")
-            ("volTensSigma,v", value<double>(&boundary.sigma_v)->default_value(0),
-             "Volume tension constant (dynes/micrometer^2).")
+            ("volTensSigma,v", value<double>(&boundary.sigma_v)->default_value(100),
+             "Volume tension constant (dynes/micrometer^5).")
             ("bending,b", value<double>(&boundary.bkappa)->default_value(30),
              "The bending modulus of the particle (kB*T).")
             ("Stretching,s", value<double>(&boundary.sconstant)->default_value(100),
@@ -165,10 +165,12 @@ int main(int argc, const char *argv[]) {
     // Compute the 2D Young's Modulus (in kB*T/nm^2) from the reduced stretching constant specified as input:
     youngsModulus = boundary.sconstant / (unit_radius_sphere * unit_radius_sphere);  // For information purposes only.
 
-    // The dimensionless form of the surface tension factor (sigma) is a function of radius:
+    // The dimensionless form of the tension factors are a function of radius:
     double dynePerCm_Scalefactor = pow(10,-14)*unit_radius_sphere*unit_radius_sphere/unitenergy;
     boundary.sigma_a = (dynePerCm_Scalefactor * boundary.sigma_a);    // Coefficient is 1 (dyne/cm) in (kB T_room/(R0 nm^2)).
-    boundary.sigma_v = (pow(10,8) * (pow(10, -7)*unit_radius_sphere*dynePerCm_Scalefactor) * boundary.sigma_v);
+    //boundary.sigma_v = (pow(10,8) * (pow(10, -7)*unit_radius_sphere*dynePerCm_Scalefactor) * boundary.sigma_v);
+        // If the constraint is linear, this has units of dynPerMicrometer^2 correctly.
+    boundary.sigma_v = (pow(10,24) * (pow(10, -28)*unit_radius_sphere*unit_radius_sphere*unit_radius_sphere*unit_radius_sphere*dynePerCm_Scalefactor) * boundary.sigma_v);
 
     // The scale factor for electrostatic interactions is a function of radius:
     const double scalefactor = epsilon_water * lB_water / unit_radius_sphere;
@@ -281,7 +283,8 @@ int main(int argc, const char *argv[]) {
         cout << "Young's Modulus (2D): " << youngsModulus << endl;
         cout << "Stretching constant: " << boundary.sconstant << endl;
         cout << "Surface Tension constant: " << (boundary.sigma_a / dynePerCm_Scalefactor) << endl;
-        cout << "Volume Tension constant: " << (boundary.sigma_v / (pow(10, -7)*unit_radius_sphere*dynePerCm_Scalefactor)) << endl;
+        //cout << "Volume Tension constant: " << (boundary.sigma_v / (pow(10, -7)*unit_radius_sphere*dynePerCm_Scalefactor)) << endl;
+        cout << "Volume Tension constant: " << (boundary.sigma_v / (pow(10,24) * (pow(10, -28)*unit_radius_sphere*unit_radius_sphere*unit_radius_sphere*unit_radius_sphere*dynePerCm_Scalefactor)))<< endl;
         cout << "Unstretched edge length: " << boundary.avg_edge_length
              << endl; // NB uncommented & replaced the output value.
         cout << "LJ strength: " << boundary.elj << endl;
@@ -328,7 +331,8 @@ int main(int argc, const char *argv[]) {
         list_out << "Young's Modulus (2D): " << youngsModulus << endl;
         list_out << "Stretching constant: " << boundary.sconstant << endl;
         list_out << "Surface Tension constant: " << (boundary.sigma_a / dynePerCm_Scalefactor) << endl;
-        list_out << "Volume Tension constant: " << (boundary.sigma_v / (pow(10, -7)*unit_radius_sphere*dynePerCm_Scalefactor)) << endl;
+        //list_out << "Volume Tension constant: " << (boundary.sigma_v / ((pow(10,8) * pow(10, -7)*unit_radius_sphere*dynePerCm_Scalefactor))) << endl;
+        list_out << "Volume Tension constant: " << (boundary.sigma_v / (pow(10,24) * (pow(10, -28)*unit_radius_sphere*unit_radius_sphere*unit_radius_sphere*unit_radius_sphere*dynePerCm_Scalefactor))) << endl;
         list_out << "LJ strength: " << boundary.elj << endl;
         list_out << "LJ distance cutoff: " << boundary.lj_length << endl;
         list_out << "Rigid geometric constraint: " << geomConstraint << endl;

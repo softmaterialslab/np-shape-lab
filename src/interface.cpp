@@ -780,8 +780,8 @@ void INTERFACE::compute_energy(int num, const double scalefactor) {
 
     double VolTEnergy = 0;
     VolTEnergy = (sigma_v * ((total_volume - ref_volume) * (total_volume - ref_volume))); // Quadratic in volume difference from sphere.
-    //VolTEnergy = (sigma_v * (total_volume  * total_volume / ref_volume));		// Quadratic in absolute volume.
-    //VolTEnergy = (sigma_v * total_volume);    // Linear in absolute area.
+    //VolTEnergy = (sigma_v * (total_volume  * total_volume));		// Quadratic in absolute volume.
+    //VolTEnergy = (sigma_v * total_volume);    // Linear in absolute volume.
     penergy += VolTEnergy; // Output below to occur as last column.
 
     // Initialize, compute, and output the net {LJ, ES} energies:

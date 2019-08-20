@@ -77,7 +77,7 @@ void VERTEX::tension_forces(INTERFACE* boundary)
 void VERTEX::volume_tension_forces(INTERFACE* boundary)
 {   //  The net volume tension force on a vertex:
     VolTForce = ((2.0 * boundary->sigma_v * (boundary->total_volume - boundary->ref_volume)) ^ neg_GradVi);  // Quadratic volume difference from sphere.
-    //VolTForce = (2.0 * boundary->sigma_v * (boundary->total_volume - boundary->ref_volume) ^ neg_GradVi);          // Quadratic in absolute area.
+    //VolTForce = (2.0 * boundary->sigma_v * (boundary->total_volume) ^ neg_GradVi);          // Quadratic in absolute volume.
     //VolTForce = (boundary->sigma_v ^ neg_GradVi); // Linear in absolute volume.
 }
 
