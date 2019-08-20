@@ -51,10 +51,11 @@ void force_calculation_init(INTERFACE &boundary, const double scalefactor) {
         boundary.V[i].forvec += boundary.V[i].sforce;
     }
     // (2017.09.17 NB added.) Contribute initial tension forces:
-    for (i = 0; i <
-                             boundary.V.size(); i++) {   // Re-calculation of the numerical geometric gradients not required as positions haven't changed from above.
+    for (i = 0; i < boundary.V.size(); i++) {   // Re-calculation of the numerical geometric gradients not required as positions haven't changed from above.
         boundary.V[i].tension_forces(&boundary);
         boundary.V[i].forvec += boundary.V[i].TForce;
+        boundary.V[i].volume_tension_forces(&boundary);
+        boundary.V[i].forvec += boundary.V[i].VolTForce;
     }
 }
 
@@ -116,11 +117,11 @@ void force_calculation(INTERFACE &boundary, const double scalefactor) {
         boundary.V[i].stretching_forces(&boundary);
         //boundary.V[i].forvec += boundary.V[i].sforce;
     }
-    // Surface tension forces (2017.09.17 NB added):
+    // Surface & volume tension forces (2017.09.17, 2019.08.16 NB added):
     for (i = 0; i < boundary.V.size(); i++)
     {   // Recalculation of negated gradients already handled above.
         boundary.V[i].tension_forces(&boundary);
-        //boundary.V[i].forvec += boundary.V[i].TForce;
+        boundary.V[i].volume_tension_forces(&boundary);
     }
 
     //forvec broadcasting using all gather = gather + broadcast
@@ -132,7 +133,7 @@ void force_calculation(INTERFACE &boundary, const double scalefactor) {
     }
 
     for (i = 0; i < boundary.V.size(); i++)
-        boundary.V[i].forvec = forvecGather[i] + boundary.V[i].bforce + boundary.V[i].sforce+ boundary.V[i].TForce;
+        boundary.V[i].forvec = forvecGather[i] + boundary.V[i].bforce + boundary.V[i].sforce + boundary.V[i].TForce + boundary.V[i].VolTForce;
 
     forvec.clear();
     forvecGather.clear();

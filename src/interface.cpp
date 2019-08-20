@@ -778,6 +778,12 @@ void INTERFACE::compute_energy(int num, const double scalefactor) {
     if (world.rank() == 0)
         output << TEnergy << " ";
 
+    double VolTEnergy = 0;
+    VolTEnergy = (sigma_v * ((total_volume - ref_volume) * (total_volume - ref_volume))); // Quadratic in volume difference from sphere.
+    //VolTEnergy = (sigma_v * (total_volume  * total_volume / ref_volume));		// Quadratic in absolute volume.
+    //VolTEnergy = (sigma_v * total_volume);    // Linear in absolute area.
+    penergy += VolTEnergy; // Output below to occur as last column.
+
     // Initialize, compute, and output the net {LJ, ES} energies:
     //Common MPI Message objects
     vector<double> energyLJ(sizFVec, 0.0);
@@ -800,11 +806,8 @@ void INTERFACE::compute_energy(int num, const double scalefactor) {
     }
 
     for (i = lowerBound; i <= upperBound; i++) {
-
         lj_total += energyLJ[i-lowerBound];
         es_total += energyES[i-lowerBound];
-
-
     }
 
     //MPI Operations
@@ -823,8 +826,6 @@ void INTERFACE::compute_energy(int num, const double scalefactor) {
     }
         penergy += lj_totalT + es_totalT;
 
-
-
     /*
     if (world.rank() == 0) {
         if (num == 0)
@@ -837,7 +838,10 @@ void INTERFACE::compute_energy(int num, const double scalefactor) {
 
     //penergy += lj_total + es_total;
     if (world.rank() == 0)
-        output << lj_totalT << " " << es_totalT << endl;
+        output << lj_totalT << " " << es_totalT << " ";
+
+    if (world.rank() == 0)
+        output << VolTEnergy << endl;
 
 /*	// line tension energy
 

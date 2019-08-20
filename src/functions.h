@@ -184,7 +184,59 @@ inline void RATTLE(INTERFACE &boundary, char constraintForm) {
     return;
 }
 
-// SHAKE_for_area to ensure the area constraint is true:  (2017.09.06 NB added conditional bypass, see comments below.)
+// ### Functions useful in Nose-Hoover chain implementation: ###
+
+// update bath xi value
+inline void update_chain_xi(unsigned int j, vector<THERMOSTAT> &bath, double dt, long double ke) {
+    if (bath[j].Q == 0)
+        return;
+    if (j != 0)
+        bath[j].xi = bath[j].xi * exp(-0.5 * dt * bath[j + 1].xi) + 0.5 * dt * (1.0 / bath[j].Q) *
+                                                                    (bath[j - 1].Q * bath[j - 1].xi * bath[j - 1].xi -
+                                                                     bath[j].dof * kB * bath[j].T) *
+                                                                    exp(-0.25 * dt * bath[j + 1].xi);
+    else
+        bath[j].xi = bath[j].xi * exp(-0.5 * dt * bath[j + 1].xi) +
+                     0.5 * dt * (1.0 / bath[j].Q) * (2 * ke - bath[j].dof * kB * bath[j].T) *
+                     exp(-0.25 * dt * bath[j + 1].xi);
+    return;
+}
+
+// ### New functions (as of ? prior to NB): ###
+
+// interface movie
+void interface_movie(int num, vector<VERTEX> &s, INTERFACE &dsphere);
+
+void interface_pov(int num, INTERFACE &dsphere);
+
+void interface_pov_smooth(int num, INTERFACE &dsphere);
+
+void interface_off(int num, INTERFACE &dsphere);
+
+// initialize velocities of vertices
+void initialize_vertex_velocities(vector<VERTEX> &V, vector<THERMOSTAT> &bath);
+
+// initialize velocities of vertics to be zero
+void initialize_vertex_velocities_to_zero(vector<VERTEX> &V);
+
+// ### Unused functions: ###
+
+// constraint equation
+inline long double constraint(vector<VERTEX> &s, INTERFACE &dsphere) {
+//   return dsphere.total_induced_charge(s) - dsphere.total_charge_inside(ion) * (1/dsphere.eout - 1/dsphere.ein);
+    return 0;
+}
+
+// dot constraint equation
+inline long double dotconstraint(vector<VERTEX> &s) {
+    long double sigmadot = 0;
+//   for (unsigned int k = 0; k < s.size(); k++)
+//     sigmadot += s[k].vw * s[k].a;
+    return sigmadot;
+}
+
+//  ### Works in progress: ###
+// SHAKE_for_area to ensure the area constraint is true:  (Unfinished, vector issues.)
 inline void SHAKE_for_area(INTERFACE &boundary, CONTROL &mdremote, char constraintForm) {
     double fa = 0;
     double fb = 0;
@@ -254,7 +306,7 @@ inline void SHAKE_for_area(INTERFACE &boundary, CONTROL &mdremote, char constrai
     return;
 }
 
-// RATTLE to ensure time derivative of the area constraint is true:  (2017.09.06 NB added conditional bypass, see comments below.)
+// RATTLE to ensure time derivative of the area constraint is true:  (Unfinished, vector issues.)
 inline void RATTLE_for_area(INTERFACE &boundary, char constraintForm) {
     double mu, num, den;
 
@@ -295,57 +347,6 @@ inline void RATTLE_for_area(INTERFACE &boundary, char constraintForm) {
         //boundary.V[i].velvec = boundary.V[i].velvec + (mu * 0.5 ^ boundary.V[i].dummy_aforce); OLD
     }
     return;
-}
-
-// ### Functions useful in Nose-Hoover chain implementation: ###
-
-// update bath xi value
-inline void update_chain_xi(unsigned int j, vector<THERMOSTAT> &bath, double dt, long double ke) {
-    if (bath[j].Q == 0)
-        return;
-    if (j != 0)
-        bath[j].xi = bath[j].xi * exp(-0.5 * dt * bath[j + 1].xi) + 0.5 * dt * (1.0 / bath[j].Q) *
-                                                                    (bath[j - 1].Q * bath[j - 1].xi * bath[j - 1].xi -
-                                                                     bath[j].dof * kB * bath[j].T) *
-                                                                    exp(-0.25 * dt * bath[j + 1].xi);
-    else
-        bath[j].xi = bath[j].xi * exp(-0.5 * dt * bath[j + 1].xi) +
-                     0.5 * dt * (1.0 / bath[j].Q) * (2 * ke - bath[j].dof * kB * bath[j].T) *
-                     exp(-0.25 * dt * bath[j + 1].xi);
-    return;
-}
-
-// ### New functions (as of ? prior to NB): ###
-
-// interface movie
-void interface_movie(int num, vector<VERTEX> &s, INTERFACE &dsphere);
-
-void interface_pov(int num, INTERFACE &dsphere);
-
-void interface_pov_smooth(int num, INTERFACE &dsphere);
-
-void interface_off(int num, INTERFACE &dsphere);
-
-// initialize velocities of vertices
-void initialize_vertex_velocities(vector<VERTEX> &V, vector<THERMOSTAT> &bath);
-
-// initialize velocities of vertics to be zero
-void initialize_vertex_velocities_to_zero(vector<VERTEX> &V);
-
-// ### Unused functions: ###
-
-// constraint equation
-inline long double constraint(vector<VERTEX> &s, INTERFACE &dsphere) {
-//   return dsphere.total_induced_charge(s) - dsphere.total_charge_inside(ion) * (1/dsphere.eout - 1/dsphere.ein);
-    return 0;
-}
-
-// dot constraint equation
-inline long double dotconstraint(vector<VERTEX> &s) {
-    long double sigmadot = 0;
-//   for (unsigned int k = 0; k < s.size(); k++)
-//     sigmadot += s[k].vw * s[k].a;
-    return sigmadot;
 }
 
 #endif
