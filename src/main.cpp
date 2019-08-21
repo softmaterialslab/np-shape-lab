@@ -110,13 +110,13 @@ int main(int argc, const char *argv[]) {
              "Salt concentration (Molar).")
             ("tensSigma,t", value<double>(&boundary.sigma_a)->default_value(3),
              "Surface tension constant (dynes/cm).")
-            ("volTensSigma,v", value<double>(&boundary.sigma_v)->default_value(100),
+            ("volTensSigma,v", value<double>(&boundary.sigma_v)->default_value(1000000),
              "Volume tension constant (dynes/micrometer^5).")
             ("bending,b", value<double>(&boundary.bkappa)->default_value(30),
              "The bending modulus of the particle (kB*T).")
             ("Stretching,s", value<double>(&boundary.sconstant)->default_value(100),
              "Reduced stretching modulus of the particle (kB*T/R0^2).")
-                // Physical Parameters patterned(Janus & Striped) particles:
+                // Physical Parameters for patterned (Janus & Striped) particles:
             ("numPatches,N", value<int>(&numPatches)->default_value(1),
              "The number of distinct charge patches (of tunable size if N = 2)")
             ("fracChargePatch,p", value<double>(&fracChargedPatch)->default_value(0.5),
@@ -166,11 +166,10 @@ int main(int argc, const char *argv[]) {
     youngsModulus = boundary.sconstant / (unit_radius_sphere * unit_radius_sphere);  // For information purposes only.
 
     // The dimensionless form of the tension factors are a function of radius:
-    double dynePerCm_Scalefactor = pow(10,-14)*unit_radius_sphere*unit_radius_sphere/unitenergy;
+    double dynePerCm_Scalefactor = pow(10,-14)*(pow(unit_radius_sphere, 2)/unitenergy);
     boundary.sigma_a = (dynePerCm_Scalefactor * boundary.sigma_a);    // Coefficient is 1 (dyne/cm) in (kB T_room/(R0 nm^2)).
-    //boundary.sigma_v = (pow(10,8) * (pow(10, -7)*unit_radius_sphere*dynePerCm_Scalefactor) * boundary.sigma_v);
-        // If the constraint is linear, this has units of dynPerMicrometer^2 correctly.
-    boundary.sigma_v = (pow(10,24) * (pow(10, -28)*unit_radius_sphere*unit_radius_sphere*unit_radius_sphere*unit_radius_sphere*dynePerCm_Scalefactor) * boundary.sigma_v);
+    double dynePerUmFifth_Scalefactor = pow(10,-4)*pow(10,-18)*(pow(unit_radius_sphere, 6)/unitenergy);
+    boundary.sigma_v = (dynePerUmFifth_Scalefactor * boundary.sigma_v);
 
     // The scale factor for electrostatic interactions is a function of radius:
     const double scalefactor = epsilon_water * lB_water / unit_radius_sphere;
