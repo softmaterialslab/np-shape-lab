@@ -283,7 +283,7 @@ int main(int argc, const char *argv[]) {
         cout << "Stretching constant: " << boundary.sconstant << endl;
         cout << "Surface Tension constant: " << (boundary.sigma_a / dynePerCm_Scalefactor) << endl;
         //cout << "Volume Tension constant: " << (boundary.sigma_v / (pow(10, -7)*unit_radius_sphere*dynePerCm_Scalefactor)) << endl;
-        cout << "Volume Tension constant: " << (boundary.sigma_v / (pow(10,24) * (pow(10, -28)*unit_radius_sphere*unit_radius_sphere*unit_radius_sphere*unit_radius_sphere*dynePerCm_Scalefactor)))<< endl;
+        cout << "Volume Tension constant: " << (boundary.sigma_v / dynePerUmFifth_Scalefactor)<< endl;
         cout << "Unstretched edge length: " << boundary.avg_edge_length
              << endl; // NB uncommented & replaced the output value.
         cout << "LJ strength: " << boundary.elj << endl;
@@ -330,8 +330,7 @@ int main(int argc, const char *argv[]) {
         list_out << "Young's Modulus (2D): " << youngsModulus << endl;
         list_out << "Stretching constant: " << boundary.sconstant << endl;
         list_out << "Surface Tension constant: " << (boundary.sigma_a / dynePerCm_Scalefactor) << endl;
-        //list_out << "Volume Tension constant: " << (boundary.sigma_v / ((pow(10,8) * pow(10, -7)*unit_radius_sphere*dynePerCm_Scalefactor))) << endl;
-        list_out << "Volume Tension constant: " << (boundary.sigma_v / (pow(10,24) * (pow(10, -28)*unit_radius_sphere*unit_radius_sphere*unit_radius_sphere*unit_radius_sphere*dynePerCm_Scalefactor))) << endl;
+        list_out << "Volume Tension constant: " << (boundary.sigma_v / dynePerUmFifth_Scalefactor) << endl;
         list_out << "LJ strength: " << boundary.elj << endl;
         list_out << "LJ distance cutoff: " << boundary.lj_length << endl;
         list_out << "Rigid geometric constraint: " << geomConstraint << endl;
