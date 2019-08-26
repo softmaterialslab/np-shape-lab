@@ -110,8 +110,8 @@ int main(int argc, const char *argv[]) {
              "Salt concentration (Molar).")
             ("tensSigma,t", value<double>(&boundary.sigma_a)->default_value(3),
              "Surface tension constant (dynes/cm).")
-            ("volTensSigma,v", value<double>(&boundary.sigma_v)->default_value(1000000),
-             "Volume tension constant (dynes/micrometer^5).")
+            ("volTensSigma,v", value<double>(&boundary.sigma_v)->default_value(1),
+             "Volume tension constant (atm/nm^3).")
             ("bending,b", value<double>(&boundary.bkappa)->default_value(30),
              "The bending modulus of the particle (kB*T).")
             ("Stretching,s", value<double>(&boundary.sconstant)->default_value(100),
@@ -168,8 +168,10 @@ int main(int argc, const char *argv[]) {
     // The dimensionless form of the tension factors are a function of radius:
     double dynePerCm_Scalefactor = pow(10,-14)*(pow(unit_radius_sphere, 2)/unitenergy);
     boundary.sigma_a = (dynePerCm_Scalefactor * boundary.sigma_a);    // Coefficient is 1 (dyne/cm) in (kB T_room/(R0 nm^2)).
-    double dynePerUmFifth_Scalefactor = pow(10,-4)*pow(10,-18)*(pow(unit_radius_sphere, 6)/unitenergy);
-    boundary.sigma_v = (dynePerUmFifth_Scalefactor * boundary.sigma_v);
+    //double dynePerUmFifth_Scalefactor = pow(10,-4)*pow(10,-18)*(pow(unit_radius_sphere, 6)/unitenergy);
+    //boundary.sigma_v = (dynePerUmFifth_Scalefactor * boundary.sigma_v);
+    double atmPerNmThird_Scalefactor = (1.01325 * pow(10,5)) * pow(10,-27) * (pow(unit_radius_sphere, 6) / (unitenergy * pow(10, -7)));
+    boundary.sigma_v = atmPerNmThird_Scalefactor * boundary.sigma_v;
 
     // The scale factor for electrostatic interactions is a function of radius:
     const double scalefactor = epsilon_water * lB_water / unit_radius_sphere;
@@ -241,7 +243,6 @@ int main(int argc, const char *argv[]) {
     // NB added following lines to load off-file (does not warn if the file is not found, yet):
     if (offFlag == 'y') boundary.load_configuration("380000.off");
 
-
     int numOfNodes = world.size();
     if (world.rank() == 0) {
 #pragma omp parallel default(shared)
@@ -282,8 +283,7 @@ int main(int argc, const char *argv[]) {
         cout << "Young's Modulus (2D): " << youngsModulus << endl;
         cout << "Stretching constant: " << boundary.sconstant << endl;
         cout << "Surface Tension constant: " << (boundary.sigma_a / dynePerCm_Scalefactor) << endl;
-        //cout << "Volume Tension constant: " << (boundary.sigma_v / (pow(10, -7)*unit_radius_sphere*dynePerCm_Scalefactor)) << endl;
-        cout << "Volume Tension constant: " << (boundary.sigma_v / dynePerUmFifth_Scalefactor)<< endl;
+        cout << "Volume Tension constant: " << (boundary.sigma_v / atmPerNmThird_Scalefactor)<< endl;
         cout << "Unstretched edge length: " << boundary.avg_edge_length
              << endl; // NB uncommented & replaced the output value.
         cout << "LJ strength: " << boundary.elj << endl;
@@ -330,7 +330,7 @@ int main(int argc, const char *argv[]) {
         list_out << "Young's Modulus (2D): " << youngsModulus << endl;
         list_out << "Stretching constant: " << boundary.sconstant << endl;
         list_out << "Surface Tension constant: " << (boundary.sigma_a / dynePerCm_Scalefactor) << endl;
-        list_out << "Volume Tension constant: " << (boundary.sigma_v / dynePerUmFifth_Scalefactor) << endl;
+        list_out << "Volume Tension constant: " << (boundary.sigma_v / atmPerNmThird_Scalefactor) << endl;
         list_out << "LJ strength: " << boundary.elj << endl;
         list_out << "LJ distance cutoff: " << boundary.lj_length << endl;
         list_out << "Rigid geometric constraint: " << geomConstraint << endl;
