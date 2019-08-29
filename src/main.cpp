@@ -104,18 +104,20 @@ int main(int argc, const char *argv[]) {
                 // Physical Parameters:
             ("unitRadius,R", value<double>(&unit_radius_sphere)->default_value(10),
              "Radius of the initial sphere & simulation unit of length (in nanometers).")
-            ("netCharge,q", value<double>(&q_strength)->default_value(900),
+            ("netCharge,q", value<double>(&q_strength)->default_value(600),
              "Net NP charge, if fully occupied (elementary charges).")
-            ("saltConc,c", value<double>(&conc_out)->default_value(0.02),
+            ("saltConc,c", value<double>(&conc_out)->default_value(0.005),
              "Salt concentration (Molar).")
-            ("tensSigma,t", value<double>(&boundary.sigma_a)->default_value(3),
+            ("tensSigma,t", value<double>(&boundary.sigma_a)->default_value(1),
              "Surface tension constant (dynes/cm).")
             ("volTensSigma,v", value<double>(&boundary.sigma_v)->default_value(1),
              "Volume tension constant (atm/nm^3).")
-            ("bending,b", value<double>(&boundary.bkappa)->default_value(30),
+            ("bending,b", value<double>(&boundary.bkappa)->default_value(40),
              "The bending modulus of the particle (kB*T).")
-            ("Stretching,s", value<double>(&boundary.sconstant)->default_value(100),
+            ("Stretching,s", value<double>(&boundary.sconstant)->default_value(40),
              "Reduced stretching modulus of the particle (kB*T/R0^2).")
+            ("GeomConstraint,G", value<char>(&geomConstraint)->default_value('N'),
+             "Specification of rigid geometric constraints, 'V' for volume.")
                 // Physical Parameters for patterned (Janus & Striped) particles:
             ("numPatches,N", value<int>(&numPatches)->default_value(1),
              "The number of distinct charge patches (of tunable size if N = 2)")
@@ -184,7 +186,6 @@ int main(int argc, const char *argv[]) {
             1.00 + (mdremote.TAnnealFac / 10.0);        // Maintain previous scaling, same as before (fQ = 2) if fT = 10.
 
     // Flags for rigid geometric constraint and form:
-    geomConstraint = 'N';                               // Constrain the volume.
     constraintForm = 'L';                               // Enforce a linear constraint (not quadratic).
 
     // ### Simulation setup: ###
