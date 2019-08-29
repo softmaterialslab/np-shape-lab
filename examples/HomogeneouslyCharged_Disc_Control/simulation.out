@@ -15,8 +15,10 @@ Bending rigidity: 40
 Young's Modulus (2D): 0.4
 Stretching constant: 40
 Surface Tension constant: 1
+Volume Tension constant: 1
 LJ strength: 1
 LJ distance cutoff: 0.0196951
+Rigid geometric constraint: N
 
 ===================
 Electrostatics
