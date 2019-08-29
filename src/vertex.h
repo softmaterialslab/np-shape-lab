@@ -40,6 +40,7 @@ private:
         ar & bforce;
         ar & sforce;
         ar & TForce;
+        ar & VolTForce; // NB added
         ar & neg_GradVi;
         ar & neg_GradAi;
         ar & neg_GradConi;
@@ -71,6 +72,7 @@ public:
     VECTOR3D bforce;
     VECTOR3D sforce;
     VECTOR3D TForce;
+    VECTOR3D VolTForce;
 
     VECTOR3D neg_GradVi;      // NB modified.  Precise name for what was previously "dummy_vforce".
     VECTOR3D neg_GradAi;      // NB added.
@@ -88,6 +90,7 @@ public:
     void stretching_forces(INTERFACE *);
 
     void tension_forces(INTERFACE *);           // 2017.09.16 NB added:  Compute the tension forces on a given vertex.
+    void volume_tension_forces(INTERFACE *);    // 2019.08.16 NB added:  Comptue volume tension forces on a given vertex.
 
     //void constraint_forces(INTERFACE*);
     //void volume_constraint_gradient(INTERFACE*);

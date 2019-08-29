@@ -53,6 +53,7 @@ void md_interface(INTERFACE &boundary, vector<THERMOSTAT> &real_bath, CONTROL &c
         SHAKE_for_area(boundary, cpmdremote, constraintForm);
         RATTLE_for_area(boundary, constraintForm);
     }
+    else cout << endl << "No rigid geometric constraint will be enforced, soft constraints only." << endl << endl;
 
     // Recompute the same quantities as above, assign post-constraint variables for comparison:
     long double vertex_ke = vertex_kinetic_energy(boundary.V);

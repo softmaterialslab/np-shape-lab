@@ -94,6 +94,9 @@ public:
     double sconstant;
     double sigma_a;            // Strength of the surface tension penalty ((kB T) / L^2).
 
+    // soft-volume constraint parameter:
+    double sigma_v;
+
     EDGE *edge_between(VERTEX *, VERTEX *);
 
     // ### Geometric operations: ###

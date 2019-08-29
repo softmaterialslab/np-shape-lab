@@ -110,11 +110,13 @@ int main(int argc, const char *argv[]) {
              "Salt concentration (Molar).")
             ("tensSigma,t", value<double>(&boundary.sigma_a)->default_value(3),
              "Surface tension constant (dynes/cm).")
+            ("volTensSigma,v", value<double>(&boundary.sigma_v)->default_value(1),
+             "Volume tension constant (atm/nm^3).")
             ("bending,b", value<double>(&boundary.bkappa)->default_value(30),
              "The bending modulus of the particle (kB*T).")
             ("Stretching,s", value<double>(&boundary.sconstant)->default_value(100),
              "Reduced stretching modulus of the particle (kB*T/R0^2).")
-                // Physical Parameters patterned(Janus & Striped) particles:
+                // Physical Parameters for patterned (Janus & Striped) particles:
             ("numPatches,N", value<int>(&numPatches)->default_value(1),
              "The number of distinct charge patches (of tunable size if N = 2)")
             ("fracChargePatch,p", value<double>(&fracChargedPatch)->default_value(0.5),
@@ -124,7 +126,7 @@ int main(int argc, const char *argv[]) {
              "Duration of the simulation (total timesteps).")
             ("timestep,d", value<double>(&mdremote.timestep)->default_value(0.001),
              "Time step used in the simulation.")
-            ("initTemp,T", value<double>(&T)->default_value(0.005),
+            ("initTemp,T", value<double>(&T)->default_value(0.001),
              "Target initial temperature (prior to annealing).")
             ("disc2,D", value<unsigned int>(&disc2)->default_value(8),
              "Discretization parameter 2")
@@ -137,7 +139,7 @@ int main(int argc, const char *argv[]) {
              "If annealing occurs or not ('y' for yes).")
             ("anneal_freq,f", value<int>(&mdremote.annealfreq)->default_value(50000),
              "Interval number of steps between which annealing commences.")
-            ("anneal_dura,u", value<int>(&mdremote.annealDuration)->default_value(1),
+            ("anneal_dura,u", value<int>(&mdremote.annealDuration)->default_value(5000),
              "Number of steps over which to reduce (T = fT*T) & (Q = fQ*Q), same as before if 1")
             ("anneal_Tfac,e", value<double>(&mdremote.TAnnealFac)->default_value(1.25),
              "Fold reduction to temperature at initial annealing call.  Was 10 before (and constant throughout)")
@@ -163,9 +165,13 @@ int main(int argc, const char *argv[]) {
     // Compute the 2D Young's Modulus (in kB*T/nm^2) from the reduced stretching constant specified as input:
     youngsModulus = boundary.sconstant / (unit_radius_sphere * unit_radius_sphere);  // For information purposes only.
 
-    // The dimensionless form of the surface tension factor (sigma) is a function of radius:
-    double dynePerCm_Scalefactor = pow(10,-14)*unit_radius_sphere*unit_radius_sphere/unitenergy;
+    // The dimensionless form of the tension factors are a function of radius:
+    double dynePerCm_Scalefactor = pow(10,-14)*(pow(unit_radius_sphere, 2)/unitenergy);
     boundary.sigma_a = (dynePerCm_Scalefactor * boundary.sigma_a);    // Coefficient is 1 (dyne/cm) in (kB T_room/(R0 nm^2)).
+    //double dynePerUmFifth_Scalefactor = pow(10,-4)*pow(10,-18)*(pow(unit_radius_sphere, 6)/unitenergy);
+    //boundary.sigma_v = (dynePerUmFifth_Scalefactor * boundary.sigma_v);
+    double atmPerNmThird_Scalefactor = (1.01325 * pow(10,5)) * pow(10,-27) * (pow(unit_radius_sphere, 6) / (unitenergy * pow(10, -7)));
+    boundary.sigma_v = atmPerNmThird_Scalefactor * boundary.sigma_v;
 
     // The scale factor for electrostatic interactions is a function of radius:
     const double scalefactor = epsilon_water * lB_water / unit_radius_sphere;
@@ -177,8 +183,8 @@ int main(int argc, const char *argv[]) {
     mdremote.QAnnealFac =
             1.00 + (mdremote.TAnnealFac / 10.0);        // Maintain previous scaling, same as before (fQ = 2) if fT = 10.
 
-    // Constrain the dynamics:
-    geomConstraint = 'V';                               // Constrain the volume.
+    // Flags for rigid geometric constraint and form:
+    geomConstraint = 'N';                               // Constrain the volume.
     constraintForm = 'L';                               // Enforce a linear constraint (not quadratic).
 
     // ### Simulation setup: ###
@@ -237,7 +243,6 @@ int main(int argc, const char *argv[]) {
     // NB added following lines to load off-file (does not warn if the file is not found, yet):
     if (offFlag == 'y') boundary.load_configuration("380000.off");
 
-
     int numOfNodes = world.size();
     if (world.rank() == 0) {
 #pragma omp parallel default(shared)
@@ -278,10 +283,12 @@ int main(int argc, const char *argv[]) {
         cout << "Young's Modulus (2D): " << youngsModulus << endl;
         cout << "Stretching constant: " << boundary.sconstant << endl;
         cout << "Surface Tension constant: " << (boundary.sigma_a / dynePerCm_Scalefactor) << endl;
+        cout << "Volume Tension constant: " << (boundary.sigma_v / atmPerNmThird_Scalefactor)<< endl;
         cout << "Unstretched edge length: " << boundary.avg_edge_length
              << endl; // NB uncommented & replaced the output value.
         cout << "LJ strength: " << boundary.elj << endl;
         cout << "LJ distance cutoff: " << boundary.lj_length << endl;
+        cout << "Rigid geometric constraint: " << geomConstraint << endl;
 
         cout << "\n===================\nElectrostatics\n===================\n";
         cout << "Total charge on membrane: " << q_strength << endl;
@@ -323,8 +330,10 @@ int main(int argc, const char *argv[]) {
         list_out << "Young's Modulus (2D): " << youngsModulus << endl;
         list_out << "Stretching constant: " << boundary.sconstant << endl;
         list_out << "Surface Tension constant: " << (boundary.sigma_a / dynePerCm_Scalefactor) << endl;
+        list_out << "Volume Tension constant: " << (boundary.sigma_v / atmPerNmThird_Scalefactor) << endl;
         list_out << "LJ strength: " << boundary.elj << endl;
         list_out << "LJ distance cutoff: " << boundary.lj_length << endl;
+        list_out << "Rigid geometric constraint: " << geomConstraint << endl;
 
         list_out << "\n===================\nElectrostatics\n===================\n";
         list_out << "Total charge on membrane: " << q_strength << endl;
