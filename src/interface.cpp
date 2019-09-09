@@ -419,7 +419,7 @@ void INTERFACE::assign_q_values(int num_divisions, double q_strength) {
 }
 
 //  NB added function for pH (to distribute charge randomly); uniform for a = 1.0, equivalent to above but shuffled.
-void INTERFACE::assign_random_q_values(double q_strength, double alpha, int num_divisions, double fracChargedPatch) {
+void INTERFACE::assign_random_q_values(double q_strength, double alpha, int num_divisions, double fracChargedPatch, char randomFlag) {
     unsigned int i;
     vector<pair<double, int> > permutations;
     for (i = 0; i < number_of_vertices; i++)
@@ -443,9 +443,6 @@ void INTERFACE::assign_random_q_values(double q_strength, double alpha, int num_
     for (i = chargeStateList.size(); i < number_of_vertices; i++) {
         chargeStateList.push_back(0);
     }
-    // Shuffle the list so it is randomly distributed:
-    srand(0/*time(0)*/);
-    random_shuffle(chargeStateList.begin(), chargeStateList.end());
 
     // Previously, permutations & mismatched indices were used for pseudorandom scrambling.  This enforces a more random one.
     vector<double> randomAreaList;
@@ -453,8 +450,12 @@ void INTERFACE::assign_random_q_values(double q_strength, double alpha, int num_
         randomAreaList.push_back(V[i].itsarea); // Create the to-be-randomized vertex area list:
     }
 
-    // Once generated, randomize the vertex area list (uses the same random seed based on time above):
-    random_shuffle(randomAreaList.begin(), randomAreaList.end());
+    // Randomize both the charge state list (for pH studies) and vertex area list (for normalization of all methods):
+    if (randomFlag == 'y'){
+        srand(0/*time(0)*/);
+        random_shuffle(chargeStateList.begin(), chargeStateList.end());
+        random_shuffle(randomAreaList.begin(), randomAreaList.end());
+    }
 
     int nVertPerPatch = fracChargedPatch*V.size();
 

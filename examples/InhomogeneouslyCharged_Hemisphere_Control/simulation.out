@@ -41,4 +41,5 @@ Anneal frequency: 50000
 Anneal duration: 5000
 Temperature annealing decrement: 1.25
 Thermostat mass decrement: 1.125
+Randomness during run: n
 Off-file loaded: n

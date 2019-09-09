@@ -92,7 +92,7 @@ int main(int argc, const char *argv[]) {
     double unit_radius_sphere, youngsModulus, q_strength, alpha, conc_out, z_out; // radius (in nm), net charge (if all charged), fractional q-occupancy, salt conc (MOLAR), salt valency
     int numPatches;
     double fracChargedPatch;
-    char offFlag, geomConstraint, constraintForm;
+    char randomFlag, offFlag, geomConstraint, constraintForm;
 
     // Control of the dynamics:
     CONTROL mdremote;
@@ -101,7 +101,7 @@ int main(int argc, const char *argv[]) {
     options_description desc("Usage:\nrandom_mesh <options>");
     desc.add_options()
             ("help,h", "print usage message")
-                // Physical Parameters:
+                 // Physical Parameters:
             ("unitRadius,R", value<double>(&unit_radius_sphere)->default_value(10),
              "Radius of the initial sphere & simulation unit of length (in nanometers).")
             ("netCharge,q", value<double>(&q_strength)->default_value(600),
@@ -118,12 +118,12 @@ int main(int argc, const char *argv[]) {
              "Reduced stretching modulus of the particle (kB*T/R0^2).")
             ("GeomConstraint,G", value<char>(&geomConstraint)->default_value('N'),
              "Specification of rigid geometric constraints, 'V' for volume.")
-                // Physical Parameters for patterned (Janus & Striped) particles:
+                 // Physical Parameters for patterned (Janus & Striped) particles:
             ("numPatches,N", value<int>(&numPatches)->default_value(1),
              "The number of distinct charge patches (of tunable size if N = 2)")
             ("fracChargePatch,p", value<double>(&fracChargedPatch)->default_value(0.5),
              "Surface area fraction of the patch (if N = 2, otherwise irrelevant).")
-                // Virtual Parameters:
+                 // Virtual Parameters:
             ("totalTime,S", value<int>(&mdremote.steps)->default_value(250000),
              "Duration of the simulation (total timesteps).")
             ("timestep,d", value<double>(&mdremote.timestep)->default_value(0.001),
@@ -136,7 +136,7 @@ int main(int argc, const char *argv[]) {
              "Number of thermostat particles in the Nose-Hoover chain (plus 1).")
             ("thermostatMass,Q", value<double>(&Q)->default_value(.01),
              "Mass of the thermostat (higher means less strongly coupled).")
-                // Annealing Parameters:
+                 // Annealing Parameters:
             ("annealFlag,a", value<char>(&mdremote.anneal)->default_value('y'),
              "If annealing occurs or not ('y' for yes).")
             ("anneal_freq,f", value<int>(&mdremote.annealfreq)->default_value(50000),
@@ -145,12 +145,14 @@ int main(int argc, const char *argv[]) {
              "Number of steps over which to reduce (T = fT*T) & (Q = fQ*Q), same as before if 1")
             ("anneal_Tfac,e", value<double>(&mdremote.TAnnealFac)->default_value(1.25),
              "Fold reduction to temperature at initial annealing call.  Was 10 before (and constant throughout)")
-                // Runtime & Output Parameters:
+                 // Runtime & Output Parameters:
+            ("randomFlag,F", value<char>(&randomFlag)->default_value('y'),
+             "If predefined shape used or not ('y' for yes).")
             ("offFlag,o", value<char>(&offFlag)->default_value('n'),
              "If predefined shape used or not ('y' for yes).")
             ("moviestart,m", value<int>(&mdremote.moviestart)->default_value(1),
              "The starting point of the movie")
-            ("offfreq,F", value<int>(&mdremote.offfreq)->default_value(2500),
+            ("offfreq,O", value<int>(&mdremote.offfreq)->default_value(2500),
              "The frequency of making off files")
             ("moviefreq,M", value<int>(&mdremote.moviefreq)->default_value(1000),
              "The frequency of shooting the movie")
@@ -210,7 +212,7 @@ int main(int argc, const char *argv[]) {
     // Generate the membrane:
     boundary.discretize(disc1, disc2);            // discretize the interface
     if (disc1 != 0 || disc2 != 0)
-        boundary.assign_random_q_values(q_strength, alpha, numPatches, fracChargedPatch); // number of components input
+        boundary.assign_random_q_values(q_strength, alpha, numPatches, fracChargedPatch, randomFlag);
         //boundary.assign_external_q_values(q_strength);
 
     boundary.dressup(lambda_a, lambda_v);            // dress the interface with normals,...
@@ -241,7 +243,7 @@ int main(int argc, const char *argv[]) {
     for (unsigned int i = 0; i < boundary.V.size(); i++)
         boundary.V[i].m = 1.0;      // NB:  Energy conservation fails invariably if not = 1.0 .
 
-    // NB added following lines to load off-file (does not warn if the file is not found, yet):
+    // NB added following lines to load off-file (stops if the file is not found):
     if (offFlag == 'y') boundary.load_configuration("380000.off");
 
     int numOfNodes = world.size();
@@ -309,6 +311,7 @@ int main(int argc, const char *argv[]) {
         cout << "Anneal duration: " << mdremote.annealDuration << endl;
         cout << "Temperature annealing decrement: " << mdremote.TAnnealFac << endl;
         cout << "Thermostat mass decrement: " << mdremote.QAnnealFac << endl;
+        cout << "Randomness during run: " << randomFlag << endl;
         cout << "Off-file loaded: " << offFlag << endl;
 
         // Same thing in a file even if you're not on an HPC that can store the console output automatically on request:
@@ -354,6 +357,7 @@ int main(int argc, const char *argv[]) {
         list_out << "Anneal duration: " << mdremote.annealDuration << endl;
         list_out << "Temperature annealing decrement: " << mdremote.TAnnealFac << endl;
         list_out << "Thermostat mass decrement: " << mdremote.QAnnealFac << endl;
+        list_out << "Randomness during run: " << randomFlag << endl;
         list_out << "Off-file loaded: " << offFlag << endl;
 
         // (NB added) Print the initial state in the movie file, prior to MD:
