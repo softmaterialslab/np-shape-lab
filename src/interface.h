@@ -121,7 +121,7 @@ public:
 
     void assign_q_spots(int num_divisions, int division_size, double q_strength);
 
-    void assign_random_q_values(double q_strength, double alpha, int num_divisions, double fracChargedPatch);
+    void assign_random_q_values(double q_strength, double alpha, int num_divisions, double fracChargedPatch, char randomFlag);
 
     void assign_external_q_values(double q_strength);
 
