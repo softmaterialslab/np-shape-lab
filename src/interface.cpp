@@ -452,7 +452,7 @@ void INTERFACE::assign_random_q_values(double q_strength, double alpha, int num_
 
     // Randomize both the charge state list (for pH studies) and vertex area list (for normalization of all methods):
     if (randomFlag == 'y'){
-        srand(0/*time(0)*/);
+        srand(time(0));
         random_shuffle(chargeStateList.begin(), chargeStateList.end());
         random_shuffle(randomAreaList.begin(), randomAreaList.end());
     }
@@ -874,10 +874,7 @@ void INTERFACE::compute_energy(int num, const double scalefactor) {
 
     //penergy += lj_total + es_total;
     if (world.rank() == 0)
-        output << lj_totalT << " " << es_totalT << " ";
-
-    if (world.rank() == 0)
-        output << VolTEnergy << endl;
+        output << lj_totalT << " " << es_totalT << " " << VolTEnergy << endl;
 
 /*	// line tension energy
 
