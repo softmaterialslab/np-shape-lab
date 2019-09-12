@@ -874,10 +874,7 @@ void INTERFACE::compute_energy(int num, const double scalefactor) {
 
     //penergy += lj_total + es_total;
     if (world.rank() == 0)
-        output << lj_totalT << " " << es_totalT << " ";
-
-    if (world.rank() == 0)
-        output << VolTEnergy << endl;
+        output << lj_totalT << " " << es_totalT << " " << VolTEnergy << endl;
 
 /*	// line tension energy
 

@@ -27,17 +27,7 @@ void md_interface(INTERFACE &boundary, vector<THERMOSTAT> &real_bath, CONTROL &c
     ofstream list_temperature("outfiles/temperature.dat", ios::app);
     ofstream list_momentum("outfiles/total_momentum.dat", ios::app);
 
-    // (NB added.) Compute each & save pre-constraint, pre-MD {momentum, temp, net E}:
-    vertex_kinetic_energy(boundary.V);
-    boundary.compute_energy(0, scalefactor);
-    VECTOR3D total_momentum = VECTOR3D(0, 0, 0);
-    for (unsigned int i = 0; i < boundary.V.size(); i++)
-        total_momentum += boundary.V[i].velvec;
-    // Define the original temperature pre-MD SHAKE & RATTLE:
-    double preConTemp = 2 * boundary.kenergy / (real_bath[0].dof * kB);
-    double preConNetEnergy = (boundary.energy + bath_kinetic_energy(real_bath) + bath_potential_energy(real_bath));
-
-    // SHAKE & RATTLE prior to MD:  (NB moved to below energy initialization to observe any temperature shift from before & after constraint function calls.)
+    // SHAKE & RATTLE prior to MD:
     if (geomConstraint == 'V') {
         if (world.rank() == 0) {
             if (constraintForm == 'Q') cout << "Constraint:  net volume, quadratically." << endl << endl;
@@ -55,29 +45,28 @@ void md_interface(INTERFACE &boundary, vector<THERMOSTAT> &real_bath, CONTROL &c
     }
     else cout << endl << "No rigid geometric constraint will be enforced, soft constraints only." << endl << endl;
 
-    // Recompute the same quantities as above, assign post-constraint variables for comparison:
-    long double vertex_ke = vertex_kinetic_energy(boundary.V);
-
+    // NB added to provide the initial quantities (pre-MD):
     boundary.compute_energy(0, scalefactor);
-    total_momentum = VECTOR3D(0, 0, 0);
+    long double vertex_ke = vertex_kinetic_energy(boundary.V);
+    double real_bath_ke = bath_kinetic_energy(real_bath);
+    double real_bath_pe = bath_potential_energy(real_bath);
+    VECTOR3D total_momentum = VECTOR3D(0, 0, 0);
     for (unsigned int i = 0; i < boundary.V.size(); i++)
         total_momentum += boundary.V[i].velvec;
     double initNetEnergy = (boundary.energy + bath_kinetic_energy(real_bath) + bath_potential_energy(real_bath));
-
     if (world.rank() == 0) {
-        // Report the initial temperature and any shift due to constraints, for troubleshooting:
-        cout << "Initial Temperature (prior to MD): " << 2 * boundary.kenergy / (real_bath[0].dof * kB)
-             << "\t  &  constraint-induced shift: " << (2 * boundary.kenergy / (real_bath[0].dof * kB) - preConTemp)
-             << "."
-             << endl;
-        cout << "Initial Net Energy (prior to MD):  " << initNetEnergy << "\t\t  &  constraint-induced shift: "
-             << (initNetEnergy - preConNetEnergy) << "." << endl;
+        list_energy << 0 << setw(15) << boundary.kenergy << setw(15) << boundary.penergy << setw(15)
+                    << boundary.energy << setw(15) << boundary.energy
+                                                      + real_bath_ke + real_bath_pe << setw(15) << real_bath_ke
+                    << setw(15) << real_bath_pe << endl;
+
+        // Compute and output the face-based net area & volumes:
+        list_area << 0 << setw(15) << boundary.total_area << endl;
+        list_volume << 0 << setw(15) << boundary.total_volume << endl;
+
+        // Output the temperature (and optionally, thermostat parameters):
+        list_temperature << 0 << setw(15) << 2 * boundary.kenergy / (real_bath[0].dof * kB) << endl;
     }
-    // NB added to provide the initial quantities (pre-MD) [those not dumped had scope issues]:
-    //list_area << 0 << setw(15) << boundary.total_area << endl;
-    //list_volume << 0 << setw(15) << boundary.total_volume << endl;
-    //list_temperature << 0 << setw(15) << 2*boundary.kenergy/(real_bath[0].dof*kB) << endl;
-    //list_momentum << 0 << setw(15) << total_momentum << endl;
 
     // For annealing, compute per-step fractional decrement in {T, Q} required for desired net decrement per procedure.
     /* VJ suggested not changing annealing procedure from abrupt, but simply changing magnitude decremented per call.
