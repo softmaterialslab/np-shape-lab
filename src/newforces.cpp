@@ -20,8 +20,12 @@ void force_calculation_init(INTERFACE &boundary, const double scalefactor) {
             VECTOR3D ljforce;
             VECTOR3D esforce;
             VECTOR3D r_vec = boundary.V[i].posvec - boundary.V[j].posvec;
+            double r = r_vec.GetMagnitude();
             double r2 = r_vec.GetMagnitudeSquared();
+            double r3 = r * r * r;
             double d2 = boundary.lj_length * boundary.lj_length;
+
+            VECTOR3D grad_vec = r_vec ^ ((-1.0) / r3);
 
             if (r2 < dcut2 * d2) {
                 double r6 = r2 * r2 * r2;
@@ -31,9 +35,8 @@ void force_calculation_init(INTERFACE &boundary, const double scalefactor) {
                 ljforce = (r_vec ^ (48 * boundary.elj * ((d12 / r12) - 0.5 * (d6 / r6)) * (1 / r2)));
             }
 
-            esforce = ((-scalefactor * boundary.V[i].q * boundary.V[j].q / boundary.em) * (exp(-(1.0 / boundary.inv_kappa_out) * r_vec.GetMagnitude())) ^
-                       (Grad(boundary.V[i].posvec, boundary.V[j].posvec) +
-                        (((-1.0 / boundary.inv_kappa_out) * (1 / r2)) ^ r_vec)));
+            esforce = ((-scalefactor * boundary.V[i].q * boundary.V[j].q / boundary.em) * (exp(-(1.0 / boundary.inv_kappa_out) * r)) ^
+                       (grad_vec + (((-1.0 / boundary.inv_kappa_out) * (1 / r2)) ^ r_vec)));
 
             boundary.V[i].forvec += ljforce + esforce;
         }
@@ -85,8 +88,12 @@ void force_calculation(INTERFACE &boundary, const double scalefactor) {
             VECTOR3D ljforce;
             VECTOR3D esforce;
             VECTOR3D r_vec = boundary.V[i].posvec - boundary.V[j].posvec;
+            double r = r_vec.GetMagnitude();
             double r2 = r_vec.GetMagnitudeSquared();
+            double r3 = r * r * r;
             double d2 = boundary.lj_length * boundary.lj_length;
+
+            VECTOR3D grad_vec = r_vec ^ ((-1.0) / r3);
 
             if (r2 < dcut2 * d2) {
                 double r6 = r2 * r2 * r2;
@@ -96,9 +103,8 @@ void force_calculation(INTERFACE &boundary, const double scalefactor) {
                 ljforce = (r_vec ^ (48 * boundary.elj * ((d12 / r12) - 0.5 * (d6 / r6)) * (1 / r2)));
             }
 
-            esforce = ((-scalefactor * boundary.V[i].q * boundary.V[j].q / boundary.em) * (exp(-(1.0 / boundary.inv_kappa_out) * r_vec.GetMagnitude())) ^
-                       (Grad(boundary.V[i].posvec, boundary.V[j].posvec) +
-                        (((-1.0 / boundary.inv_kappa_out) * (1 / r2)) ^ r_vec)));
+            esforce = ((-scalefactor * boundary.V[i].q * boundary.V[j].q / boundary.em) * (exp(-(1.0 / boundary.inv_kappa_out) * r)) ^
+                       (grad_vec + (((-1.0 / boundary.inv_kappa_out) * (1 / r2)) ^ r_vec)));
 
             forvec[i-lowerBound] += ljforce + esforce;
             //boundary.V[i].forvec += ljforce + esforce;

@@ -541,7 +541,7 @@ void INTERFACE::assign_external_q_values(double q_strength) {
     char fileName[100];
     int col1;
     double col2;
-    sprintf(fileName, "infiles/Charge_Patterns/Output.txt");
+    sprintf(fileName, "infiles/Charge_Patterns/ChargeNeutral_Janus_3-8_p=0.40.dat");
     ifstream inStream(fileName, ios::in);
     if (!inStream)    // Verify the file could be opened.
     {
