@@ -120,7 +120,7 @@ int main(int argc, const char *argv[]) {
              "Specification of rigid geometric constraints, 'V' for volume.")
                  // Physical Parameters for patterned (Janus & Striped) particles:
             ("numPatches,N", value<int>(&numPatches)->default_value(1),
-             "The number of distinct charge patches (of tunable size if N = 2)")
+             "The number of distinct charge patches (of tunable size if N = 2).")
             ("fracChargePatch,p", value<double>(&fracChargedPatch)->default_value(0.5),
              "Surface area fraction of the patch (if N = 2, otherwise irrelevant).")
                  // Virtual Parameters:

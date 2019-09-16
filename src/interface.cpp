@@ -541,7 +541,7 @@ void INTERFACE::assign_external_q_values(double q_strength) {
     char fileName[100];
     int col1;
     double col2;
-    sprintf(fileName, "infiles/Charge_Patterns/Output.txt");
+    sprintf(fileName, "infiles/Charge_Patterns/ChargeNeutral_Janus_3-8_p=0.40.dat");
     ifstream inStream(fileName, ios::in);
     if (!inStream)    // Verify the file could be opened.
     {
@@ -758,7 +758,7 @@ void INTERFACE::compute_local_energies_by_component() {
     }
 }
 
-// Compute the membrane-wide energies at a given step (num), component-wise {kinetic, BE, SE, TE, LJ, ES} respectively:
+// Compute the membrane-wide energies at a given step (num), component-wise {kinetic, BE, SE, TE, VE, LJ, ES} respectively:
 // This produces the "energy_in_parts" output file and calculates the quantities used in "energy_nanomembrane".
 void INTERFACE::compute_energy(int num, const double scalefactor) {
 

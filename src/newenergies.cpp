@@ -18,6 +18,6 @@ double energy_lj_vertex_vertex(VERTEX& v1, VERTEX& v2, double d, double elj)
 
 double energy_es_vertex_vertex(VERTEX& v1, VERTEX& v2, double em, double inv_kappa, const double scalefactor)
 {
-//   return(scalefactor * v1.q * v2.q  / (em * (v1.posvec - v2.posvec).GetMagnitude()));
-  return(scalefactor * v1.q * v2.q * ( exp(-(1.0/inv_kappa) * (v1.posvec - v2.posvec).GetMagnitude()) ) / (em * (v1.posvec - v2.posvec).GetMagnitude()));
+  double r = (v1.posvec - v2.posvec).GetMagnitude();
+  return(scalefactor * v1.q * v2.q * ( exp(-(1.0/inv_kappa) * r) ) / (em * r));
 }

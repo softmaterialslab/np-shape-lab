@@ -27,23 +27,6 @@ void auto_correlation_function();
 // display progress bar (code from the internet)
 void progressBar(double);
 
-// ### Functions useful in computing forces and energies: ###
-
-// computes gradient of green's fn
-inline VECTOR3D Grad(VECTOR3D &vec1, VECTOR3D &vec2) {
-    long double r = (vec1 - vec2).GetMagnitude();
-    long double r3 = r * r * r;
-    return (vec1 - vec2) ^ ((-1.0) / r3);
-}
-
-// computes gradient of normal dot gradient of 1/r
-inline VECTOR3D GradndotGrad(VECTOR3D &vec1, VECTOR3D &vec2, VECTOR3D &normal) {
-    long double r = (vec1 - vec2).GetMagnitude();
-    long double r3 = r * r * r;
-    long double r5 = r3 * r * r;
-    return ((normal ^ (1.0 / r3)) - ((vec1 - vec2) ^ (3 * (normal * (vec1 - vec2)) / r5)));
-}
-
 // ### Functions useful in implementing constraints: ###
 
 // SHAKE to ensure the volume constraint is true:  (2017.09.06 NB added conditional bypass if constraint is true already.)
@@ -221,6 +204,21 @@ void initialize_vertex_velocities_to_zero(vector<VERTEX> &V);
 
 // ### Unused functions: ###
 
+// computes gradient of green's fn
+inline VECTOR3D Grad(VECTOR3D &vec1, VECTOR3D &vec2) {
+    long double r = (vec1 - vec2).GetMagnitude();
+    long double r3 = r * r * r;
+    return (vec1 - vec2) ^ ((-1.0) / r3);
+}
+
+// computes gradient of normal dot gradient of 1/r
+inline VECTOR3D GradndotGrad(VECTOR3D &vec1, VECTOR3D &vec2, VECTOR3D &normal) {
+    long double r = (vec1 - vec2).GetMagnitude();
+    long double r3 = r * r * r;
+    long double r5 = r3 * r * r;
+    return ((normal ^ (1.0 / r3)) - ((vec1 - vec2) ^ (3 * (normal * (vec1 - vec2)) / r5)));
+}
+
 // constraint equation
 inline long double constraint(vector<VERTEX> &s, INTERFACE &dsphere) {
 //   return dsphere.total_induced_charge(s) - dsphere.total_charge_inside(ion) * (1/dsphere.eout - 1/dsphere.ein);
@@ -236,6 +234,7 @@ inline long double dotconstraint(vector<VERTEX> &s) {
 }
 
 //  ### Works in progress: ###
+
 // SHAKE_for_area to ensure the area constraint is true:  (Unfinished, vector issues.)
 inline void SHAKE_for_area(INTERFACE &boundary, CONTROL &mdremote, char constraintForm) {
     double fa = 0;
