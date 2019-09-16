@@ -758,7 +758,7 @@ void INTERFACE::compute_local_energies_by_component() {
     }
 }
 
-// Compute the membrane-wide energies at a given step (num), component-wise {kinetic, BE, SE, TE, LJ, ES} respectively:
+// Compute the membrane-wide energies at a given step (num), component-wise {kinetic, BE, SE, TE, VE, LJ, ES} respectively:
 // This produces the "energy_in_parts" output file and calculates the quantities used in "energy_nanomembrane".
 void INTERFACE::compute_energy(int num, const double scalefactor) {
 
