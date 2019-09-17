@@ -93,6 +93,7 @@ int main(int argc, const char *argv[]) {
     int numPatches;
     double fracChargedPatch;
     char randomFlag, offFlag, geomConstraint, constraintForm;
+    string externalPattern;
 
     // Control of the dynamics:
     CONTROL mdremote;
@@ -118,11 +119,13 @@ int main(int argc, const char *argv[]) {
              "Reduced stretching modulus of the particle (kB*T/R0^2).")
             ("GeomConstraint,G", value<char>(&geomConstraint)->default_value('N'),
              "Specification of rigid geometric constraints, 'V' for volume.")
-                 // Physical Parameters for patterned (Janus & Striped) particles:
+                 // Physical Parameters for patterned (Janus, Striped, Polyhedral) particles:
             ("numPatches,N", value<int>(&numPatches)->default_value(1),
              "The number of distinct charge patches (of tunable size if N = 2).")
             ("fracChargePatch,p", value<double>(&fracChargedPatch)->default_value(0.5),
              "Surface area fraction of the patch (if N = 2, otherwise irrelevant).")
+            ("externalPattern,E", value<string>(&externalPattern)->default_value("None"),
+             "Filename of pattern to be imported (without the '.dat' extension).")
                  // Virtual Parameters:
             ("totalTime,S", value<int>(&mdremote.steps)->default_value(250000),
              "Duration of the simulation (total timesteps).")
@@ -158,7 +161,7 @@ int main(int argc, const char *argv[]) {
              "The frequency of shooting the movie")
             ("povfreq,P", value<int>(&mdremote.povfreq)->default_value(100000),
              "The frequency of making povray files")
-            ("writedata,W", value<int>(&mdremote.writedata)->default_value(1000),
+            ("writedata,W", value<int>(&mdremote.writedata)->default_value(500),
              "frequency of dumping thermo time series (after 1K steps)");
 
     variables_map vm;
@@ -212,17 +215,14 @@ int main(int argc, const char *argv[]) {
     // Generate the membrane:
     boundary.discretize(disc1, disc2);            // discretize the interface
     if (disc1 != 0 || disc2 != 0)
-        boundary.assign_random_q_values(q_strength, alpha, numPatches, fracChargedPatch, randomFlag);
-        //boundary.assign_external_q_values(q_strength);
+        if(externalPattern == "None") boundary.assign_random_q_values(q_strength, alpha, numPatches, fracChargedPatch, randomFlag);
+        else boundary.assign_external_q_values(q_strength, externalPattern);
 
-    boundary.dressup(lambda_a, lambda_v);            // dress the interface with normals,...
+    boundary.dressup(lambda_a, lambda_v);            // Compute initial normals, areas, and volumes.
 
     boundary.ref_area = boundary.total_area; // NB changed from (4 * pi), discrete membrane differs.
     boundary.ref_volume = boundary.total_volume;
-    boundary.ref_Area_Vertices = boundary.total_Area_Vertices;    // (2017.09.19 NB added.)  Initial area by vertices.
-
-    // stretching parameters
-    // boundary.l0 = boundary.avg_edge_length;
+    //boundary.ref_Area_Vertices = boundary.total_Area_Vertices;    // (2017.09.19 NB added.)  Initial area by vertices.
 
     // LJ length
     boundary.lj_length = boundary.lj_length * boundary.avg_edge_length;
@@ -280,8 +280,8 @@ int main(int argc, const char *argv[]) {
              << "  Ref volume: " << boundary.ref_volume << endl;
         cout << "Total intial face area: " << boundary.total_area << "  Sphere area: " << 4 * pi << "  Ref area: "
              << boundary.ref_area << endl;
-        cout << "Total intial vertex area: " << boundary.total_Area_Vertices << "  Sphere area: " << 4 * pi
-             << "  Ref area: " << boundary.ref_Area_Vertices << endl;
+        /*cout << "Total intial vertex area: " << boundary.total_Area_Vertices << "  Sphere area: " << 4 * pi
+             << "  Ref area: " << boundary.ref_Area_Vertices << endl;*/
         cout << "Bending rigidity: " << boundary.bkappa << endl;
         cout << "Young's Modulus (2D): " << youngsModulus << endl;
         cout << "Stretching constant: " << boundary.sconstant << endl;
@@ -328,8 +328,8 @@ int main(int argc, const char *argv[]) {
                  << "  Ref volume: " << boundary.ref_volume << endl;
         list_out << "Total intial face area: " << boundary.total_area << "  Sphere area: " << 4 * pi << "  Ref area: "
                  << boundary.ref_area << endl;
-        list_out << "Total intial vertex area: " << boundary.total_Area_Vertices << "  Sphere area: " << 4 * pi
-                 << "  Ref area: " << boundary.ref_Area_Vertices << endl;
+        /*list_out << "Total intial vertex area: " << boundary.total_Area_Vertices << "  Sphere area: " << 4 * pi
+                 << "  Ref area: " << boundary.ref_Area_Vertices << endl;*/
         list_out << "Bending rigidity: " << boundary.bkappa << endl;
         list_out << "Young's Modulus (2D): " << youngsModulus << endl;
         list_out << "Stretching constant: " << boundary.sconstant << endl;

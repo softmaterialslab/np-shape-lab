@@ -142,7 +142,7 @@ void md_interface(INTERFACE &boundary, vector<THERMOSTAT> &real_bath, CONTROL &c
 
         // ### Output file updates: ###
         // Output the series data at the specified interval:
-        if (num % cpmdremote.writedata == 0 || num < 1000) {
+        if (num % cpmdremote.writedata == 0 || num < 3) {
             // Compute & output the membrane-wide and global energies (energy_nanomembrane quantities):
 
             boundary.compute_energy(num, scalefactor);
@@ -181,9 +181,9 @@ void md_interface(INTERFACE &boundary, vector<THERMOSTAT> &real_bath, CONTROL &c
         // Output the dump (movie) file data at the specified interval:
         if (num % cpmdremote.moviefreq == 0) {
             for (unsigned int i = 0; i < boundary.F.size(); i++)
-                boundary.F[i].computenormal();
+                boundary.F[i].compute_area_normal();
             for (unsigned int i = 0; i < boundary.V.size(); i++)
-                boundary.V[i].computenormal();
+                boundary.V[i].compute_area_normal();
             if (num % cpmdremote.offfreq == 0)
                 interface_off(num, boundary);
             if (world.rank() == 0)
@@ -194,9 +194,9 @@ void md_interface(INTERFACE &boundary, vector<THERMOSTAT> &real_bath, CONTROL &c
         if (num % cpmdremote.povfreq == 0)
         {
           for(unsigned int i=0; i<boundary.F.size(); i++)
-            boundary.F[i].computenormal();
+            boundary.F[i].compute_area_normal();
           for(unsigned int i=0; i<boundary.V.size(); i++)
-            boundary.V[i].computenormal();
+            boundary.V[i].compute_area_normal();
           interface_pov_smooth(num,boundary);
           interface_pov(num,boundary);
         }
