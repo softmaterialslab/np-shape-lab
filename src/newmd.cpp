@@ -216,17 +216,15 @@ void md_interface(INTERFACE &boundary, vector<THERMOSTAT> &real_bath, CONTROL &c
                 {
                     cpmdremote.TAnnealFac = 1.25;
                     cpmdremote.QAnnealFac = 1.0 + (cpmdremote.TAnnealFac / 10.0);
-                } else if (num <=
-                           (3 * cpmdremote.annealfreq))  // If in the 2-4th stages, decrement temperature by 2.0x.
+                } else if (num <= (3 * cpmdremote.annealfreq))  // If in the 2-4th stages, decrement temperature by 2.0x.
                 {
                     cpmdremote.TAnnealFac = 2;
                     cpmdremote.QAnnealFac = 1.0 + (cpmdremote.TAnnealFac / 10.0);
-                } else if (num < 6 * cpmdremote.annealfreq)  // If in the 5-7th stages, decrement temperature by 5.0x.
+                } else if (num <= 6 * cpmdremote.annealfreq)  // If in the 5-7th stages, decrement temperature by 5.0x.
                 {
                     cpmdremote.TAnnealFac = 5;
                     cpmdremote.QAnnealFac = 1.0 + (cpmdremote.TAnnealFac / 10.0);
-                } else if ((6 * cpmdremote.annealfreq) <= num <
-                           (7 * cpmdremote.annealfreq)) // If in 8th, decrement temperature by 8.0x.
+                } else if (num <= (7 * cpmdremote.annealfreq)) // If in 8th, decrement temperature by 8.0x.
                 { //  This phase will bring the (T = (10^-4)*T_0).
                     cpmdremote.TAnnealFac = 8;
                     cpmdremote.QAnnealFac = 1.0 + (cpmdremote.TAnnealFac / 10.0);

@@ -30,7 +30,8 @@ public:
     int annealfreq;          // frequency of annealing
     int annealDuration; // NB added to anneal gradually over this many steps.  Value ascribed in main.
     double TAnnealFac;  // NB added.  Fractional decrement to temperature per annealing procedure.
-    double QAnnealFac;  // NB added.  Same for the thermostat fake mass.\
+    double QAnnealFac;  // NB added.  Same for the thermostat fake mass.
+    
     //double stepStart;   // NB added.  Dictates the step at which the MD should start.  Useful if loading off-file.
 
     int moviestart;         //movie strat point

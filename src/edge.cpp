@@ -113,13 +113,15 @@ VECTOR3D EDGE::compute_gradS(VERTEX *wrt) {
     } else {
         v1 = wrt;
         for (unsigned int i = 0; i < itsF[0]->itsV.size(); i++)
-            if (itsF[0]->itsV[i] != itsV[0] && itsF[0]->itsV[i] != itsV[1]
-                && itsF[0]->itsV[i] != wrt)
+		  {
+            if (itsF[0]->itsV[i] != itsV[0] && itsF[0]->itsV[i] != itsV[1] && itsF[0]->itsV[i] != wrt)
                 v3 = itsF[0]->itsV[i];
+		  }
         for (unsigned int i = 0; i < itsF[1]->itsV.size(); i++)
-            if (itsF[1]->itsV[i] != itsV[0] && itsF[1]->itsV[i] != itsV[1]
-                && itsF[1]->itsV[i] != wrt)
+		  {
+            if (itsF[1]->itsV[i] != itsV[0] && itsF[1]->itsV[i] != itsV[1] && itsF[1]->itsV[i] != wrt)
                 v3 = itsF[1]->itsV[i];
+		  }
         v0 = itsV[0];
         v2 = itsV[1];
 
@@ -153,11 +155,15 @@ double EDGE::crossingLengthSquared() {
     VERTEX *v1;
     VERTEX *v2;
     for (unsigned int i = 0; i < itsF[0]->itsV.size(); i++)
+	 {
         if (itsF[0]->itsV[i] != itsV[0] && itsF[0]->itsV[i] != itsV[1])
             v1 = itsF[0]->itsV[i];
+	 }
     for (unsigned int i = 0; i < itsF[1]->itsV.size(); i++) //NOTE replaced F[0] by F[1], technically true.
+	 {
         if (itsF[1]->itsV[i] != itsV[0] && itsF[1]->itsV[i] != itsV[1])
             v2 = itsF[1]->itsV[i];
+	 }
     return ((v2->posvec) - (v1->posvec)).GetMagnitudeSquared();
 }
 

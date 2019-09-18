@@ -214,9 +214,12 @@ int main(int argc, const char *argv[]) {
 
     // Generate the membrane:
     boundary.discretize(disc1, disc2);            // discretize the interface
-    if (disc1 != 0 || disc2 != 0)
-        if(externalPattern == "None") boundary.assign_random_q_values(q_strength, alpha, numPatches, fracChargedPatch, randomFlag);
-        else boundary.assign_external_q_values(q_strength, externalPattern);
+    if (disc1 != 0 || disc2 != 0) {
+        if (externalPattern == "None") 
+			  boundary.assign_random_q_values(q_strength, alpha, numPatches, fracChargedPatch, randomFlag);
+        else 
+			  boundary.assign_external_q_values(q_strength, externalPattern);
+	 }
 
     boundary.dressup(lambda_a, lambda_v);            // Compute initial normals, areas, and volumes.
 
