@@ -81,7 +81,7 @@ public:
     double realke;
     double r, theta, phi;            //  Returns the polar coordinates of the vertex.
 
-    void computenormal();
+    void compute_area_normal();
 
     void computearea();
 

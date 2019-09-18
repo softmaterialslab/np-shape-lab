@@ -3,12 +3,18 @@
 #include "vertex.h"
 #include "functions.h"
 
-void VERTEX::computenormal()
-{
+// Compute the area associated with each vertex and the area-weighted normal vectors:
+void VERTEX::compute_area_normal()
+{ // The order of these are as computed in the previous code (simply combined functions).  Must discuss.
   itsnormal = VECTOR3D(0,0,0);
   for (unsigned int i = 0; i < itsF.size(); i++)
     itsnormal += ((itsF[i]->itsnormal)^(itsF[i]->itsarea));	// area weighted
   itsnormal = (itsnormal^(1/itsnormal.GetMagnitude()));
+
+  itsarea = 0;
+  for (unsigned int i = 0; i < itsF.size(); i++)
+    itsarea = itsarea + (itsF[i]->itsarea);
+  itsarea = itsarea * (1./3.);
 }
 
 //  Compute the area associated with each vertex (1/3 the sum of its faces):
@@ -50,13 +56,16 @@ void VERTEX::compute_neg_VGrads(INTERFACE* boundary/*, char constraintFlag*/)
 void VERTEX::stretching_forces(INTERFACE* boundary)
 {
   VECTOR3D temp_sforce;       // The stretching force due to one edge on the vertex.
-  sforce = VECTOR3D(0,0,0);   // The net stretching force due to all eges on the vertex (iterative sum of the above).
+  sforce = VECTOR3D(0,0,0);   // The net stretching force due to all edges on the vertex (iterative sum of the above).
   
   for (unsigned int i = 0; i < itsE.size(); i++)
   {
-    temp_sforce = ( (itsE[i]->length() - itsE[i]->l0) / itsE[i]->length() ) ^ (posvec - itsE[i]->opposite(this)->posvec);
+    double l = itsE[i]->length();
+    double l0 = itsE[i]->l0;
+
+    temp_sforce = ( (l - l0) / l ) ^ (posvec - itsE[i]->opposite(this)->posvec);
     
-    temp_sforce = temp_sforce ^ (1.0 / (itsE[i]->l0 * itsE[i]->l0) );
+    temp_sforce = temp_sforce ^ (1.0 / (l0 * l0) );
     
     sforce += temp_sforce;
   }

@@ -47,7 +47,7 @@ private:
         ar & number_of_faces;
         ar & total_area;
         ar & total_volume;
-        ar & total_Area_Vertices;
+        //ar & total_Area_Vertices;
         ar & rest_volume;
         ar & avg_edge_length;
         ar & elj;
@@ -83,7 +83,8 @@ public:
     unsigned int number_of_vertices;
     unsigned int number_of_edges;
     unsigned int number_of_faces;
-    double total_area, total_volume, total_Area_Vertices;   // (2017.09.19 NB added total_Area_Vertices.)
+    double total_area, total_volume;
+    //double total_Area_Vertices;   // (2017.09.19 NB added total_Area_Vertices.)
     double rest_volume;
 
     double avg_edge_length;
@@ -123,7 +124,7 @@ public:
 
     void assign_random_q_values(double q_strength, double alpha, int num_divisions, double fracChargedPatch, char randomFlag);
 
-    void assign_external_q_values(double q_strength);
+    void assign_external_q_values(double q_strength, string externalPattern);
 
     // ###  Energy computation operations: ###
     void compute_local_energies(const double scalefactor);  // (O) Computes the local energetics profiles (creates local_*_E.off files).

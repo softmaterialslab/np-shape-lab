@@ -48,7 +48,7 @@ public:
 
     VERTEX *across(EDGE *);
 
-    void computenormal();
+    void compute_area_normal();
 
     void computecenter();
 

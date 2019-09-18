@@ -28,14 +28,12 @@ void INTERFACE::set_up(double unit_radius_sphere) {
 // dress up the interface with normals areas and volume elements
 void INTERFACE::dressup(double _lambda_a, double _lambda_v) {
     for (unsigned int i = 0; i < F.size(); i++) {
-        F[i].computenormal();
-        F[i].computearea();
+        F[i].compute_area_normal();
         F[i].computevolume();
     }
 
     for (unsigned int i = 0; i < V.size(); i++) {
-        V[i].computenormal();
-        V[i].computearea();
+        V[i].compute_area_normal();
     }
 
     total_area = 0;
@@ -46,9 +44,9 @@ void INTERFACE::dressup(double _lambda_a, double _lambda_v) {
     for (unsigned int i = 0; i < F.size(); i++)
         total_volume += F[i].subtends_volume;
 
-    total_Area_Vertices = 0;                                                // (2017.09.17 NB added.)  Computes current net area by vertices.
+    /*total_Area_Vertices = 0;                          // (2017.09.17 NB added.)  Computes current net area by vertices.
     for (unsigned int i = 0; i < V.size(); i++)
-        total_Area_Vertices += V[i].itsarea;
+        total_Area_Vertices += V[i].itsarea;*/
 
     //   ofstream filenormals("outfiles/normal.dat", ios::out);
     //   ofstream fileareas("outfiles/area.dat", ios::out);
@@ -536,12 +534,13 @@ void INTERFACE::assign_random_q_values(double q_strength, double alpha, int num_
 }
 
 //  NB added function to import charge values from a file:
-void INTERFACE::assign_external_q_values(double q_strength) {
-    // Read data from a single specified file (within a for-loop iterating over all files).
-    char fileName[100];
+void INTERFACE::assign_external_q_values(double q_strength, string externalPattern) {
+    // Read data from a single specified file:
+    stringstream fileNameStream;
+    fileNameStream << "infiles/Charge_Patterns/" << externalPattern << ".dat";
+    string fileName = fileNameStream.str();
     int col1;
     double col2;
-    sprintf(fileName, "infiles/Charge_Patterns/ChargeNeutral_Janus_3-8_p=0.40.dat");
     ifstream inStream(fileName, ios::in);
     if (!inStream)    // Verify the file could be opened.
     {
@@ -809,7 +808,7 @@ void INTERFACE::compute_energy(int num, const double scalefactor) {
     double TEnergy = 0;
     //TEnergy = (sigma_a * (((total_Area_Vertices - ref_Area_Vertices) * (total_Area_Vertices - ref_Area_Vertices)) / ref_Area_Vertices)); // Quadratic in area difference from sphere.
     //TEnergy = (sigma_a * total_Area_Vertices * total_Area_Vertices / ref_Area_Vertices);		// Quadratic in absolute area.
-    TEnergy = (sigma_a * total_Area_Vertices);    // Linear in absolute area.
+    TEnergy = (sigma_a * total_area);    // Linear in absolute area.
     penergy += TEnergy;
     if (world.rank() == 0)
         output << TEnergy << " ";

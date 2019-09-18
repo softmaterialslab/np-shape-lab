@@ -164,18 +164,18 @@ double EDGE::crossingLengthSquared() {
 void EDGE::flipIfFavorable() {
     if (((itsF[0]->itsnormal) * (itsF[1]->itsnormal)) < 0) {
         flip();
-        itsF[0]->computenormal();
-        itsF[1]->computenormal();
+        itsF[0]->compute_area_normal();
+        itsF[1]->compute_area_normal();
         return;
     }
     if (crossingLengthSquared() < lengthSquared()) {
         flip();
-        itsF[0]->computenormal();
-        itsF[1]->computenormal();
+        itsF[0]->compute_area_normal();
+        itsF[1]->compute_area_normal();
         if (((itsF[0]->itsnormal) * (itsF[1]->itsnormal)) < 0) {
             flip();
-            itsF[0]->computenormal();
-            itsF[1]->computenormal();
+            itsF[0]->compute_area_normal();
+            itsF[1]->compute_area_normal();
             return;
         }
         return;

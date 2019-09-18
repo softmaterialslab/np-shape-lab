@@ -24,31 +24,25 @@ EDGE* FACE::across(VERTEX* curV)
 }
 
 
-void FACE::computenormal()
+void FACE::compute_area_normal()
 {
   assert(itsV.size()==3);	// make sure that there are three vertices to the face
   
-  VECTOR3D r10 = itsV[1]->posvec - itsV[0]->posvec;   // NB renamed for consistency (were just a & b).
-  VECTOR3D r21 = itsV[2]->posvec - itsV[1]->posvec;
-  itsdirection = r10%r21;
+  //VECTOR3D r10 = itsV[1]->posvec - itsV[0]->posvec;   // NB renamed for consistency (were just a & b).
+  //VECTOR3D r21 = itsV[2]->posvec - itsV[1]->posvec;
+  itsdirection = (itsV[1]->posvec - itsV[0]->posvec)%(itsV[2]->posvec - itsV[1]->posvec);
   itsarea = 0.5*(itsdirection.GetMagnitude());
   itsnormal = itsdirection^(0.5/itsarea);		// normalize
   return;
 }
 
-void FACE::computecenter()
-{
-  assert(itsV.size() == 3);
-  itscenter = (itsV[0]->posvec + itsV[1]->posvec + itsV[2]->posvec)^(1.0/3.0);
-}
-
 void FACE::computearea()
 {
   assert(itsV.size()==3);	// make sure that there are three vertices to the face
-  
-  VECTOR3D r10 = itsV[1]->posvec - itsV[0]->posvec; // NB renamed for consistency (were just a & b).
-  VECTOR3D r21 = itsV[2]->posvec - itsV[1]->posvec;
-  itsarea = 0.5*(r10%r21).GetMagnitude();
+
+  //VECTOR3D r10 = itsV[1]->posvec - itsV[0]->posvec; // NB renamed for consistency (were just a & b).
+  //VECTOR3D r21 = itsV[2]->posvec - itsV[1]->posvec;
+  itsarea = 0.5*((itsV[1]->posvec - itsV[0]->posvec)%(itsV[2]->posvec - itsV[1]->posvec)).GetMagnitude();
   return;
 }
 
@@ -105,4 +99,12 @@ void FACE::computegradients(VERTEX* wrtv, VECTOR3D* gradarea, VECTOR3D* gradvolu
   
   (*gradarea) = VECTOR3D(xcomp/denominator, ycomp/denominator, zcomp/denominator);
   
+}
+
+//  %%% Unused Functons: %%%
+
+void FACE::computecenter()
+{
+    assert(itsV.size() == 3);
+    itscenter = (itsV[0]->posvec + itsV[1]->posvec + itsV[2]->posvec)^(1.0/3.0);
 }
