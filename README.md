@@ -11,10 +11,10 @@
 ```make cluster-install```
 * Next, submit a test job:
 ```make cluster-test-submit```
-* Then, clean the datafiles from the test job:
+* Then, clean the datafiles from the test job (this runs the disc control):
 ```make dataclean```
 * Finally, submit the job:
-```makecluster-submit```
+```make cluster-submit```
 * All outputs from the simulation will be stored in the bin folder when the simulation is completed.
 * Check and compare files (ex: energy_nanomembrane.dat) inside the ```bin/outfiles``` directory.
 
