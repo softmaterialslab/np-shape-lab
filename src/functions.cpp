@@ -113,6 +113,8 @@ void interface_off(int num, INTERFACE &dsphere) {
     return;
 }
 
+// ### Unused functions: ###
+
 // compute MD trust factor R
 double compute_MD_trust_factor_R(int hiteqm) {
     char filename[200];
@@ -165,8 +167,6 @@ double compute_MD_trust_factor_R(int hiteqm) {
     }
     return R;
 }
-
-// ### Unused functions: ###
 
 // auto correlation function
 void auto_correlation_function() {

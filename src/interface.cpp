@@ -25,7 +25,7 @@ void INTERFACE::set_up(double unit_radius_sphere) {
     return;
 }
 
-// dress up the interface with normals areas and volume elements
+// Dress up the mesh with normals areas and volume elements:
 void INTERFACE::dressup(double _lambda_a, double _lambda_v) {
     for (unsigned int i = 0; i < F.size(); i++) {
         F[i].compute_area_normal();
@@ -88,7 +88,7 @@ void INTERFACE::load_configuration(string filename) {
             in >> V[i].posvec.x >> V[i].posvec.y >> V[i].posvec.z;
 }
 
-// Discretize the interface:
+// Discretize the mesh:
 void INTERFACE::discretize(unsigned int disc1, unsigned int disc2) {
     char filename[200];
     if (disc1 == 0 && disc2 == 0)
@@ -319,23 +319,6 @@ EDGE *INTERFACE::edge_between(VERTEX *v1, VERTEX *v2) {
 // 	assign_dual_boundary_edges();
 // }
 
-void INTERFACE::assign_boundary_edges() {
-    for (unsigned int i = 0; i < number_of_edges; i++)
-        E[i].isOnBoundary = 0;
-    for (unsigned int i = 0; i < number_of_faces; i++) {
-        if ((F[i].itsV[0]->q != F[i].itsV[1]->q) ||
-            (F[i].itsV[0]->q != F[i].itsV[2]->q)) {
-            // use the fact that edges and vertices are stored cyclically
-            if (F[i].itsV[1]->q == F[i].itsV[2]->q)
-                F[i].itsE[0]->isOnBoundary = 1;
-            if (F[i].itsV[2]->q == F[i].itsV[0]->q)
-                F[i].itsE[1]->isOnBoundary = 1;
-            if (F[i].itsV[0]->q == F[i].itsV[1]->q)
-                F[i].itsE[2]->isOnBoundary = 1;
-        }
-    }
-}
-
 void INTERFACE::assign_dual_boundary_edges() {
     for (unsigned int i = 0; i < number_of_edges; i++)
         E[i].isOnBoundary = 0;
@@ -353,70 +336,7 @@ void INTERFACE::assign_dual_boundary_edges() {
     }
 }
 
-//  NB has not changed this functional at all; it is exactly as originally received in May 2017.
-void INTERFACE::assign_q_values(int num_divisions, double q_strength) {
-    unsigned int i;
-    vector<pair<double, int> > permutations;
-    for (i = 0; i < number_of_vertices; i++)
-        permutations.push_back(pair<double, int>(V[i].posvec.z, i));
-    sort(permutations.begin(), permutations.end());
-    assert(num_divisions >= 1 && num_divisions <= 4);
-    double q = q_strength / number_of_vertices;
-    if (num_divisions == 1)              // only one section: uniformly charged
-    {
-//     for (i=0; i<number_of_vertices; i++)
-//       V[permutations[i].second].q = q;
-        for (i = 0; i < number_of_vertices; i++)
-            //V[permutations[i].second].q = q_strength * V[i].itsarea / total_area;  // Original with mismatched.
-            V[permutations[i].second].q = q_strength * V[permutations[i].second].itsarea / total_area;  // NB matched.
-    }
-    if (num_divisions == 2) {
-        assert(number_of_vertices % 2 == 0);
-        for (i = 0; i < number_of_vertices / 2; i++)
-            V[permutations[i].second].q = q;
-        for (; i < number_of_vertices; i++)
-            V[permutations[i].second].q = -q;
-    }
-    if (num_divisions == 3) {
-        assert(number_of_vertices % 4 == 0);
-        for (i = 0; i < number_of_vertices / 4; i++)
-            V[permutations[i].second].q = q;
-        for (; i < number_of_vertices * 3 / 4; i++)
-            V[permutations[i].second].q = -q;
-        for (; i < number_of_vertices; i++)
-            V[permutations[i].second].q = q;
-    }
-    if (num_divisions == 4) {
-        assert(number_of_vertices % 4 == 0);
-        for (i = 0; i < number_of_vertices / 4; i++)
-            V[permutations[i].second].q = q;
-        for (; i < number_of_vertices / 2; i++)
-            V[permutations[i].second].q = -q;
-        for (; i < number_of_vertices * 3 / 4; i++)
-            V[permutations[i].second].q = q;
-        for (; i < number_of_vertices; i++)
-            V[permutations[i].second].q = -q;
-    }
-
-    //assign_boundary_edges();
-    assign_dual_boundary_edges();
-
-    if (0) {
-        for (i = 0; i < number_of_vertices; i++)
-            cout << i << " " << V[i].q << "\n";
-        for (i = 0; i < number_of_edges; i++)
-            cout << setw(2) << E[i].itsV[0]->index << " "
-                 << setw(2) << E[i].itsV[1]->index << " "
-                 << setw(2) << E[i].isOnBoundary << "\n";
-        for (i = 0; i < number_of_faces; i++) {
-            cout << setw(2) << F[i].itsV[0]->index << " "
-                 << setw(2) << F[i].itsV[1]->index << " "
-                 << setw(2) << F[i].itsV[2]->index << "\n";
-        }
-    }
-}
-
-//  NB added function for pH (to distribute charge randomly); uniform for a = 1.0, equivalent to above but shuffled.
+//  NB added function for pH (to distribute charge randomly); uniform for a = 1.0, equivalent to legacy but shuffled.
 void INTERFACE::assign_random_q_values(double q_strength, double alpha, int num_divisions, double fracChargedPatch, char randomFlag) {
     unsigned int i;
     vector<pair<double, int> > permutations;
@@ -533,7 +453,7 @@ void INTERFACE::assign_random_q_values(double q_strength, double alpha, int num_
 	}*/
 }
 
-//  NB added function to import charge values from a file:
+//  NB added function to import charge values/patterns from a file:
 void INTERFACE::assign_external_q_values(double q_strength, string externalPattern) {
     // Read data from a single specified file:
     stringstream fileNameStream;
@@ -935,5 +855,87 @@ void INTERFACE::output_configuration() {
                     << F[i].itsV[1]->index << "\t"
                     << F[i].itsV[2]->index << "\t"
                     << "1\t1\n";
+    }
+}
+
+// ### Unused/Legacy Functions:  ###
+
+void INTERFACE::assign_boundary_edges() {
+    for (unsigned int i = 0; i < number_of_edges; i++)
+        E[i].isOnBoundary = 0;
+    for (unsigned int i = 0; i < number_of_faces; i++) {
+        if ((F[i].itsV[0]->q != F[i].itsV[1]->q) ||
+            (F[i].itsV[0]->q != F[i].itsV[2]->q)) {
+            // use the fact that edges and vertices are stored cyclically
+            if (F[i].itsV[1]->q == F[i].itsV[2]->q)
+                F[i].itsE[0]->isOnBoundary = 1;
+            if (F[i].itsV[2]->q == F[i].itsV[0]->q)
+                F[i].itsE[1]->isOnBoundary = 1;
+            if (F[i].itsV[0]->q == F[i].itsV[1]->q)
+                F[i].itsE[2]->isOnBoundary = 1;
+        }
+    }
+}
+
+//  NB has not changed this functional at all; it is exactly as originally received in May 2017.
+void INTERFACE::assign_q_values(int num_divisions, double q_strength) {
+    unsigned int i;
+    vector<pair<double, int> > permutations;
+    for (i = 0; i < number_of_vertices; i++)
+        permutations.push_back(pair<double, int>(V[i].posvec.z, i));
+    sort(permutations.begin(), permutations.end());
+    assert(num_divisions >= 1 && num_divisions <= 4);
+    double q = q_strength / number_of_vertices;
+    if (num_divisions == 1)              // only one section: uniformly charged
+    {
+//     for (i=0; i<number_of_vertices; i++)
+//       V[permutations[i].second].q = q;
+        for (i = 0; i < number_of_vertices; i++)
+            //V[permutations[i].second].q = q_strength * V[i].itsarea / total_area;  // Original with mismatched.
+            V[permutations[i].second].q = q_strength * V[permutations[i].second].itsarea / total_area;  // NB matched.
+    }
+    if (num_divisions == 2) {
+        assert(number_of_vertices % 2 == 0);
+        for (i = 0; i < number_of_vertices / 2; i++)
+            V[permutations[i].second].q = q;
+        for (; i < number_of_vertices; i++)
+            V[permutations[i].second].q = -q;
+    }
+    if (num_divisions == 3) {
+        assert(number_of_vertices % 4 == 0);
+        for (i = 0; i < number_of_vertices / 4; i++)
+            V[permutations[i].second].q = q;
+        for (; i < number_of_vertices * 3 / 4; i++)
+            V[permutations[i].second].q = -q;
+        for (; i < number_of_vertices; i++)
+            V[permutations[i].second].q = q;
+    }
+    if (num_divisions == 4) {
+        assert(number_of_vertices % 4 == 0);
+        for (i = 0; i < number_of_vertices / 4; i++)
+            V[permutations[i].second].q = q;
+        for (; i < number_of_vertices / 2; i++)
+            V[permutations[i].second].q = -q;
+        for (; i < number_of_vertices * 3 / 4; i++)
+            V[permutations[i].second].q = q;
+        for (; i < number_of_vertices; i++)
+            V[permutations[i].second].q = -q;
+    }
+
+    //assign_boundary_edges();
+    assign_dual_boundary_edges();
+
+    if (0) {
+        for (i = 0; i < number_of_vertices; i++)
+            cout << i << " " << V[i].q << "\n";
+        for (i = 0; i < number_of_edges; i++)
+            cout << setw(2) << E[i].itsV[0]->index << " "
+                 << setw(2) << E[i].itsV[1]->index << " "
+                 << setw(2) << E[i].isOnBoundary << "\n";
+        for (i = 0; i < number_of_faces; i++) {
+            cout << setw(2) << F[i].itsV[0]->index << " "
+                 << setw(2) << F[i].itsV[1]->index << " "
+                 << setw(2) << F[i].itsV[2]->index << "\n";
+        }
     }
 }

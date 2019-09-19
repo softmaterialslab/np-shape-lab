@@ -1,1 +1,0 @@
-# np-electrostatics-lab
