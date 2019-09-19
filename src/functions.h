@@ -100,6 +100,9 @@ inline void SHAKE(INTERFACE &boundary, CONTROL &mdremote, char constraintForm) {
     int n; // number of real roots (one or three)
 
     n = gsl_poly_solve_cubic(a, b, c, &x0, &x1, &x2);
+	 
+	 if (n == 2)
+		 cout << "INTERNAL WARNING: Unexpected number of roots in SHAKE" << endl;	// complex roots always come in pairs!
 
     //cout << "Volume_SHAKE:  Constraint NOT satisfied: " << c*pow((mdremote.timestep),3)*f0/6/*boundary.total_volume - boundary.ref_volume*/ << ". \tSHAKING, multiplier:  " << x0 << "." << endl;
 
