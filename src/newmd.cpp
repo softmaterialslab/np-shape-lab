@@ -26,6 +26,7 @@ void md_interface(INTERFACE &boundary, vector<THERMOSTAT> &real_bath, CONTROL &c
     ofstream list_volume("outfiles/volume.dat", ios::app);
     ofstream list_temperature("outfiles/temperature.dat", ios::app);
     ofstream list_momentum("outfiles/total_momentum.dat", ios::app);
+    ofstream list_netEnergyDrift("outfiles/net_Energy_Drift.dat",ios::app);
 
     // SHAKE & RATTLE prior to MD:
     if (geomConstraint == 'V') {
@@ -140,6 +141,8 @@ void md_interface(INTERFACE &boundary, vector<THERMOSTAT> &real_bath, CONTROL &c
         for (unsigned int j = 0; j < real_bath.size(); j++)
             update_chain_xi(j, real_bath, cpmdremote.timestep, vertex_ke);
 
+        unsigned int abortCounter;
+
         // ### Output file updates: ###
         // Output the series data at the specified interval:
         if (num % cpmdremote.writedata == 0 || num < 3) {
@@ -176,6 +179,28 @@ void md_interface(INTERFACE &boundary, vector<THERMOSTAT> &real_bath, CONTROL &c
                 total_momentum += boundary.V[i].velvec;
             if (world.rank() == 0)
                 list_momentum << num << setw(15) << total_momentum.GetMagnitude() << endl;
+
+            // Compute the global net energy to check for conservation:
+            double netEnergy = (boundary.energy + bath_kinetic_energy(real_bath) + bath_potential_energy(real_bath));
+            // Dump the energy drift and components explicitly (in file "net_Energy_Drift.dat"):
+            list_netEnergyDrift << num << "\t" << (netEnergy / initNetEnergy) << "\t" << netEnergy << "\t" << initNetEnergy << "\t" << abortCounter <<  endl;
+
+            //  Abort the entire program if the global net energy has drifted upward by more than 5%:
+            if (1.05 < (netEnergy / initNetEnergy)) {
+                abortCounter++;
+                if (abortCounter == 10) {
+                    cout << "Aborting due to excessive (>5%) net energy drift upwards." << endl;
+                    abort();
+                }
+            }
+            //  Also abort if annealing hasn't yet begun, but the global energy has drifted downward by more than 5%:
+            else if ((num < cpmdremote.annealfreq) && ((netEnergy / initNetEnergy) < 0.95)) {
+                abortCounter++;
+                if (abortCounter == 10) {
+                    cout << "Aborting due to excessive (>5%) net energy drift downwards prior to annealing." << endl;
+                    abort();
+                }
+            }
         }
 
         // Output the dump (movie) file data at the specified interval:
@@ -216,11 +241,11 @@ void md_interface(INTERFACE &boundary, vector<THERMOSTAT> &real_bath, CONTROL &c
                 {
                     cpmdremote.TAnnealFac = 1.25;
                     cpmdremote.QAnnealFac = 1.0 + (cpmdremote.TAnnealFac / 10.0);
-                } else if (num <= (3 * cpmdremote.annealfreq))  // If in the 2-4th stages, decrement temperature by 2.0x.
+                } else if (num <= (4 * cpmdremote.annealfreq))  // If in the 2-4th stages, decrement temperature by 2.0x.
                 {
                     cpmdremote.TAnnealFac = 2;
                     cpmdremote.QAnnealFac = 1.0 + (cpmdremote.TAnnealFac / 10.0);
-                } else if (num <= 6 * cpmdremote.annealfreq)  // If in the 5-7th stages, decrement temperature by 5.0x.
+                } else if (num <= (6 * cpmdremote.annealfreq))  // If in the 5-7th stages, decrement temperature by 5.0x.
                 {
                     cpmdremote.TAnnealFac = 5;
                     cpmdremote.QAnnealFac = 1.0 + (cpmdremote.TAnnealFac / 10.0);
@@ -258,16 +283,6 @@ void md_interface(INTERFACE &boundary, vector<THERMOSTAT> &real_bath, CONTROL &c
             real_bath[b].Q = real_bath[b].Q / 2;
           }
         }*/
-
-        //  2017.01.01 NB:  Abort the entire program if the global energy has drifted upward by more than 5%:
-        if (1.05 <
-            ((boundary.energy + bath_kinetic_energy(real_bath) + bath_potential_energy(real_bath)) / initNetEnergy))
-            abort();
-            //  Also abort if annealing hasn't yet begun, but the global energy has drifted downward by more than 5%:
-        else if ((num < cpmdremote.annealfreq) &&
-                 (((boundary.energy + bath_kinetic_energy(real_bath) + bath_potential_energy(real_bath)) /
-                   initNetEnergy) < 0.95))
-            abort();
 
         // Percentage calculation (for progress bar):
         if (world.rank() == 0) {
