@@ -80,6 +80,9 @@ void md_interface(INTERFACE &boundary, vector<THERMOSTAT> &real_bath, CONTROL &c
         cout << "Initial temperature annealing multiplier: " << fT << " Initial thermostat mass annealing multiplier: "
              << fQ << endl << endl;
 
+    // A counter that will be incremented each write step after the system has drifted, to abort after providing info:
+    unsigned int abortCounter = 0;
+
     // Run the MD:
     for (int num = 1; num <= cpmdremote.steps; num++) {
         // Reverse update of Nose-Hoover chain
@@ -140,8 +143,6 @@ void md_interface(INTERFACE &boundary, vector<THERMOSTAT> &real_bath, CONTROL &c
         // eta
         for (unsigned int j = 0; j < real_bath.size(); j++)
             update_chain_xi(j, real_bath, cpmdremote.timestep, vertex_ke);
-
-        unsigned int abortCounter;
 
         // ### Output file updates: ###
         // Output the series data at the specified interval:
