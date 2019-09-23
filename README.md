@@ -34,6 +34,8 @@
 * Respectively, these are the (radius (in nm), net charge (in e), salt concentration (in Molar), surface tension (in dyn/cm), volume tension (in atm/nm^3), bending rigidity (in kBT), stretching rigidity (in kBT), net number of steps, and discretization parameter).
 * After a few (3 - 10) minutes, this should produce a disc of final reduced area (A = 15.675), local potential (U = 2620.98 kB T), and conserved total energy (E = 2699.97 kB T).
 * Note that minor changes on order of a percent are expected due to shuffling of the initial charge distributions dependent on different machines' random seed.
+* For testing a higher resolution grid (D = 8), use
+```time ./np_shape_lab -R 10 -q 600 -c 0.005 -t 1 -v 1 -b 40 -s 40 -S 25000 -D 8 -F n```
 
 ### Homogeneously-charged Rod Formation:
 * Simply increasing the salt concentration (c) allows for testing homogeneously charged rod formation using the command below:
