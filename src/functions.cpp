@@ -41,7 +41,9 @@ void initialize_vertex_velocities_to_zero(vector<VERTEX> &V) {
     for (unsigned int i = 0; i < V.size(); i++) {
         V[i].velvec = VECTOR3D(0, 0, 0);
     }
-    VECTOR3D average_velocity_vector = VECTOR3D(0, 0, 0);
+    //VECTOR3D average_velocity_vector = VECTOR3D(0, 0, 0);
+    //for (unsigned int i = 0; i < V.size(); i++)
+        //V[i].velvec = V[i].velvec - average_velocity_vector;
 }
 
 // interface movie for VMD
@@ -113,6 +115,8 @@ void interface_off(int num, INTERFACE &dsphere) {
     return;
 }
 
+// ### Unused functions: ###
+
 // compute MD trust factor R
 double compute_MD_trust_factor_R(int hiteqm) {
     char filename[200];
@@ -165,8 +169,6 @@ double compute_MD_trust_factor_R(int hiteqm) {
     }
     return R;
 }
-
-// ### Unused functions: ###
 
 // auto correlation function
 void auto_correlation_function() {

@@ -13,17 +13,6 @@ VERTEX* FACE::across(EDGE* curE)
   return result;
 }
 
-EDGE* FACE::across(VERTEX* curV)
-{
-  EDGE* result = NULL;
-  if (curV == itsV[0] || curV == itsV[1] || curV == itsV[2])
-    for (unsigned int i=0; i < itsE.size(); i++)
-      if (itsE[i]->itsV[0] != curV && itsE[i]->itsV[1] != curV)
-	result = itsE[i];
-  return result;
-}
-
-
 void FACE::compute_area_normal()
 {
   assert(itsV.size()==3);	// make sure that there are three vertices to the face
@@ -107,4 +96,14 @@ void FACE::computecenter()
 {
     assert(itsV.size() == 3);
     itscenter = (itsV[0]->posvec + itsV[1]->posvec + itsV[2]->posvec)^(1.0/3.0);
+}
+
+EDGE* FACE::across(VERTEX* curV)
+{
+    EDGE* result = NULL;
+    if (curV == itsV[0] || curV == itsV[1] || curV == itsV[2])
+        for (unsigned int i=0; i < itsE.size(); i++)
+            if (itsE[i]->itsV[0] != curV && itsE[i]->itsV[1] != curV)
+                result = itsE[i];
+    return result;
 }

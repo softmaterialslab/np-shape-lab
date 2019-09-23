@@ -52,7 +52,7 @@ Testing parameters: echo 3 4 100 35 0.0001 300 0.8 0 1 1
 #include "control.h"
 #include "functions.h"
 #include "thermostat.h"
-#include <boost/filesystem/operations.hpp>  // 2017.09.13 NB added:  For filesystem manipulation (currently just deletes outfiles, even if inhabited), then recreates an empty one.  // Working in CLion, must check on HPC.  My Boost version:
+#include <boost/filesystem/operations.hpp>
 #include <boost/program_options.hpp>
 
 using namespace boost::program_options;
@@ -214,9 +214,12 @@ int main(int argc, const char *argv[]) {
 
     // Generate the membrane:
     boundary.discretize(disc1, disc2);            // discretize the interface
-    if (disc1 != 0 || disc2 != 0)
-        if(externalPattern == "None") boundary.assign_random_q_values(q_strength, alpha, numPatches, fracChargedPatch, randomFlag);
-        else boundary.assign_external_q_values(q_strength, externalPattern);
+    if (disc1 != 0 || disc2 != 0) {
+        if (externalPattern == "None") 
+			  boundary.assign_random_q_values(q_strength, alpha, numPatches, fracChargedPatch, randomFlag);
+        else 
+			  boundary.assign_external_q_values(q_strength, externalPattern);
+	 }
 
     boundary.dressup(lambda_a, lambda_v);            // Compute initial normals, areas, and volumes.
 

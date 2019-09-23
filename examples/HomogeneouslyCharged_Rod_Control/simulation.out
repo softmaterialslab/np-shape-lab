@@ -10,7 +10,6 @@ Lambda_a: 0
 Lambda_l: 0
 Total intial volume: 4.12627  Sphere volume: 4.18879  Ref volume: 4.12627
 Total intial face area: 12.462  Sphere area: 12.5664  Ref area: 12.462
-Total intial vertex area: 12.462  Sphere area: 12.5664  Ref area: 12.462
 Bending rigidity: 40
 Young's Modulus (2D): 0.4
 Stretching constant: 40
