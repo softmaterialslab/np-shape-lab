@@ -52,7 +52,7 @@ Testing parameters: echo 3 4 100 35 0.0001 300 0.8 0 1 1
 #include "control.h"
 #include "functions.h"
 #include "thermostat.h"
-#include <boost/filesystem/operations.hpp>  // 2017.09.13 NB added:  For filesystem manipulation (currently just deletes outfiles, even if inhabited), then recreates an empty one.  // Working in CLion, must check on HPC.  My Boost version:
+#include <boost/filesystem/operations.hpp>
 #include <boost/program_options.hpp>
 
 using namespace boost::program_options;

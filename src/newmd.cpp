@@ -184,7 +184,8 @@ void md_interface(INTERFACE &boundary, vector<THERMOSTAT> &real_bath, CONTROL &c
             // Compute the global net energy to check for conservation:
             double netEnergy = (boundary.energy + bath_kinetic_energy(real_bath) + bath_potential_energy(real_bath));
             // Dump the energy drift and components explicitly (in file "net_Energy_Drift.dat"):
-            list_netEnergyDrift << num << "\t" << (netEnergy / initNetEnergy) << "\t" << netEnergy << "\t" << initNetEnergy << "\t" << abortCounter <<  endl;
+            if (world.rank() == 0)
+                list_netEnergyDrift << num << "\t" << (netEnergy / initNetEnergy) << "\t" << netEnergy << "\t" << initNetEnergy << "\t" << abortCounter <<  endl;
 
             //  Abort the entire program if the global net energy has drifted upward by more than 5%:
             if (1.05 < (netEnergy / initNetEnergy)) {
