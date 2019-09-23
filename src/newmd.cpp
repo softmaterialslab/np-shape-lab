@@ -152,19 +152,16 @@ void md_interface(INTERFACE &boundary, vector<THERMOSTAT> &real_bath, CONTROL &c
             boundary.compute_energy(num, scalefactor);
             double real_bath_ke = bath_kinetic_energy(real_bath);
             double real_bath_pe = bath_potential_energy(real_bath);
+            // Compute the global net energy to check for conservation:
+            double netEnergy = boundary.energy + real_bath_ke + real_bath_pe;
 
             if (world.rank() == 0) {
                 list_energy << num << setw(15) << boundary.kenergy << setw(15) << boundary.penergy << setw(15)
-                            << boundary.energy << setw(15) << boundary.energy
-                                                              + real_bath_ke + real_bath_pe << setw(15) << real_bath_ke
+                            << boundary.energy << setw(15) << netEnergy << setw(15) << real_bath_ke
                             << setw(15) << real_bath_pe << endl;
 
-                // Print the initial and current net energy, along with the drift (their ratio):
-/*                cout << "(" << num << ")" << "\tInitial Net Energy: " << initNetEnergy << "\t & \t Current Net Energy: "
-                     << (boundary.energy + bath_kinetic_energy(real_bath) + bath_potential_energy(real_bath))
-                     << "\t & \t Drift: "
-                     << ((boundary.energy + bath_kinetic_energy(real_bath) + bath_potential_energy(real_bath)) /
-                         initNetEnergy) << "." << endl;*/
+                // Dump the energy drift and components explicitly (in file "net_Energy_Drift.dat"):
+                list_netEnergyDrift << num << "\t" << (netEnergy / initNetEnergy) << "\t" << netEnergy << "\t" << initNetEnergy << "\t" << abortCounter <<  endl;
 
                 // Compute and output the face-based net area & volumes:
                 list_area << num << setw(15) << boundary.total_area << endl;
@@ -173,6 +170,23 @@ void md_interface(INTERFACE &boundary, vector<THERMOSTAT> &real_bath, CONTROL &c
                 // Output the temperature (and optionally, thermostat parameters):
                 list_temperature << num << setw(15) << 2 * boundary.kenergy / (real_bath[0].dof * kB) << endl;
                 //list_variables << num << setw(15) << real_bath[0].xi << setw(15) << real_bath[0].eta << endl; // NOTE: commented out as not that important
+
+                //  Abort the entire program if the global net energy has drifted upward by more than 5%:
+                if (1.05 < (netEnergy / initNetEnergy)) {
+                    abortCounter++;
+                    if (abortCounter == 10) {
+                        cout << "Aborting due to excessive (>5%) net energy drift upwards." << endl;
+                        abort();
+                    }
+                }
+                //  Also abort if annealing hasn't yet begun, but the global energy has drifted downward by more than 5%:
+                else if ((num < cpmdremote.annealfreq) && ((netEnergy / initNetEnergy) < 0.95)) {
+                    abortCounter++;
+                    if (abortCounter == 10) {
+                        cout << "Aborting due to excessive (>5%) net energy drift downwards prior to annealing." << endl;
+                        abort();
+                    }
+                }
             }
             // Compute & output the net momentum (informative only, from velocities):
             total_momentum = VECTOR3D(0, 0, 0);
@@ -180,29 +194,6 @@ void md_interface(INTERFACE &boundary, vector<THERMOSTAT> &real_bath, CONTROL &c
                 total_momentum += boundary.V[i].velvec;
             if (world.rank() == 0)
                 list_momentum << num << setw(15) << total_momentum.GetMagnitude() << endl;
-
-            // Compute the global net energy to check for conservation:
-            double netEnergy = (boundary.energy + bath_kinetic_energy(real_bath) + bath_potential_energy(real_bath));
-            // Dump the energy drift and components explicitly (in file "net_Energy_Drift.dat"):
-            if (world.rank() == 0)
-                list_netEnergyDrift << num << "\t" << (netEnergy / initNetEnergy) << "\t" << netEnergy << "\t" << initNetEnergy << "\t" << abortCounter <<  endl;
-
-            //  Abort the entire program if the global net energy has drifted upward by more than 5%:
-            if (1.05 < (netEnergy / initNetEnergy)) {
-                abortCounter++;
-                if (abortCounter == 10) {
-                    cout << "Aborting due to excessive (>5%) net energy drift upwards." << endl;
-                    abort();
-                }
-            }
-            //  Also abort if annealing hasn't yet begun, but the global energy has drifted downward by more than 5%:
-            else if ((num < cpmdremote.annealfreq) && ((netEnergy / initNetEnergy) < 0.95)) {
-                abortCounter++;
-                if (abortCounter == 10) {
-                    cout << "Aborting due to excessive (>5%) net energy drift downwards prior to annealing." << endl;
-                    abort();
-                }
-            }
         }
 
         // Output the dump (movie) file data at the specified interval:
