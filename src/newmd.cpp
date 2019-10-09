@@ -5,7 +5,7 @@
 #include "newforces.h"
 #include "newenergies.h"
 
-void md_interface(INTERFACE &boundary, vector<THERMOSTAT> &real_bath, CONTROL &cpmdremote, char geomConstraint,
+void md_interface(INTERFACE &boundary, vector<THERMOSTAT> &real_bath, CONTROL &cpmdremote, char geomConstraint, char bucklingFlag,
                   char constraintForm, const double scalefactor) {
 
     double percentage = 0, percentagePre = -1;
@@ -15,7 +15,7 @@ void md_interface(INTERFACE &boundary, vector<THERMOSTAT> &real_bath, CONTROL &c
     initialize_vertex_velocities_to_zero(boundary.V);
 
     // ### Calculate the intial net force on all vertices: ###
-    force_calculation_init(boundary, scalefactor);
+    force_calculation_init(boundary, scalefactor, bucklingFlag);
 
     double expfac_real;
 
@@ -44,10 +44,11 @@ void md_interface(INTERFACE &boundary, vector<THERMOSTAT> &real_bath, CONTROL &c
         SHAKE_for_area(boundary, cpmdremote, constraintForm);
         RATTLE_for_area(boundary, constraintForm);
     }
-    else cout << endl << "No rigid geometric constraint will be enforced, soft constraints only." << endl << endl;
+    else if (world.rank() == 0)
+        cout << endl << "No rigid geometric constraint will be enforced, soft constraints only." << endl << endl;
 
     // NB added to provide the initial quantities (pre-MD):
-    boundary.compute_energy(0, scalefactor);
+    boundary.compute_energy(0, scalefactor, bucklingFlag);
     long double vertex_ke = vertex_kinetic_energy(boundary.V);
     double real_bath_ke = bath_kinetic_energy(real_bath);
     double real_bath_pe = bath_potential_energy(real_bath);
@@ -123,7 +124,7 @@ void md_interface(INTERFACE &boundary, vector<THERMOSTAT> &real_bath, CONTROL &c
         */
 
         // ### Compute Forces ###
-        force_calculation(boundary, scalefactor);
+        force_calculation(boundary, scalefactor, bucklingFlag);
 
         // Propagate velocity (second half time step):
         for (unsigned int i = 0; i < boundary.V.size(); i++)
@@ -149,7 +150,7 @@ void md_interface(INTERFACE &boundary, vector<THERMOSTAT> &real_bath, CONTROL &c
         if (num % cpmdremote.writedata == 0 || num < 3) {
             // Compute & output the membrane-wide and global energies (energy_nanomembrane quantities):
 
-            boundary.compute_energy(num, scalefactor);
+            boundary.compute_energy(num, scalefactor, bucklingFlag);
             double real_bath_ke = bath_kinetic_energy(real_bath);
             double real_bath_pe = bath_potential_energy(real_bath);
             // Compute the global net energy to check for conservation:
@@ -234,16 +235,17 @@ void md_interface(INTERFACE &boundary, vector<THERMOSTAT> &real_bath, CONTROL &c
                 {
                     cpmdremote.TAnnealFac = 1.25;
                     cpmdremote.QAnnealFac = 1.0 + (cpmdremote.TAnnealFac / 10.0);
-                } else if (num <= (4 * cpmdremote.annealfreq))  // If in the 2-4th stages, decrement temperature by 2.0x.
+                } else if (num <= (3 * cpmdremote.annealfreq))  // If in the 2-3rd stages, decrement temperature by 2.0x.
                 {
                     cpmdremote.TAnnealFac = 2;
                     cpmdremote.QAnnealFac = 1.0 + (cpmdremote.TAnnealFac / 10.0);
-                } else if (num <= (6 * cpmdremote.annealfreq))  // If in the 5-7th stages, decrement temperature by 5.0x.
+                } else if (num <= (6 * cpmdremote.annealfreq))  // If in the 4th-5th stages, decrement temperature by 4.0x.
                 {
-                    cpmdremote.TAnnealFac = 5;
+                    cpmdremote.TAnnealFac = 4;
                     cpmdremote.QAnnealFac = 1.0 + (cpmdremote.TAnnealFac / 10.0);
-                } else if (num <= (7 * cpmdremote.annealfreq)) // If in 8th, decrement temperature by 8.0x.
-                { //  This phase will bring the (T = (10^-4)*T_0).
+                }
+                else if (num <= (7 * cpmdremote.annealfreq)) // If in 8th, decrement temperature by 8.0x.
+                {
                     cpmdremote.TAnnealFac = 8;
                     cpmdremote.QAnnealFac = 1.0 + (cpmdremote.TAnnealFac / 10.0);
                 } else  // Any further annealing calls will decrement the temperature 10.0x.

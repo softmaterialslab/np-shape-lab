@@ -58,7 +58,7 @@ Testing parameters: echo 3 4 100 35 0.0001 300 0.8 0 1 1
 using namespace boost::program_options;
 
 // Declaring function to initiate and propagate the MD (NB added char = constraint flag):
-void md_interface(INTERFACE &, vector<THERMOSTAT> &, CONTROL &, char, char, const double scalefactor);
+void md_interface(INTERFACE &, vector<THERMOSTAT> &, CONTROL &, char, char, char, const double scalefactor);
 
 //MPI boundary parameters
 unsigned int lowerBound;
@@ -92,7 +92,7 @@ int main(int argc, const char *argv[]) {
     double unit_radius_sphere, youngsModulus, q_strength, alpha, conc_out, z_out; // radius (in nm), net charge (if all charged), fractional q-occupancy, salt conc (MOLAR), salt valency
     int numPatches;
     double fracChargedPatch;
-    char randomFlag, offFlag, geomConstraint, constraintForm;
+    char randomFlag, offFlag, geomConstraint, bucklingFlag, constraintForm;
     string externalPattern;
 
     // Control of the dynamics:
@@ -119,6 +119,8 @@ int main(int argc, const char *argv[]) {
              "Reduced stretching modulus of the particle (kB*T/R0^2).")
             ("GeomConstraint,G", value<char>(&geomConstraint)->default_value('N'),
              "Specification of rigid geometric constraints, 'V' for volume.")
+            ("bucklingFlag,B", value<char>(&bucklingFlag)->default_value('n'),
+             "Specification of stretching form, if spontaneous buckling should occur.")
                  // Physical Parameters for patterned (Janus, Striped, Polyhedral) particles:
             ("numPatches,N", value<int>(&numPatches)->default_value(1),
              "The number of distinct charge patches (of tunable size if N = 2).")
@@ -393,7 +395,7 @@ int main(int argc, const char *argv[]) {
         upperBound = boundary.V.size() - 1;
     }
 
-    md_interface(boundary, real_bath, mdremote, geomConstraint, constraintForm, scalefactor);
+    md_interface(boundary, real_bath, mdremote, geomConstraint, bucklingFlag, constraintForm, scalefactor);
     boundary.compute_local_energies(scalefactor);
     boundary.compute_local_energies_by_component();
 

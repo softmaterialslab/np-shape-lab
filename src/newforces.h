@@ -3,7 +3,7 @@
 
 #include "vertex.h"
 
-void force_calculation_init(INTERFACE &, const double);	// calculate the forces
-void force_calculation(INTERFACE &, const double);	// calculate the forces
+void force_calculation_init(INTERFACE &, const double, char bucklingFlag);	// calculate the forces
+void force_calculation(INTERFACE &, const double, char bucklingFlag);	// calculate the forces
 
 #endif 
