@@ -29,6 +29,8 @@ namespace mpi = boost::mpi;
 
 using namespace std;
 
+
+
 // constants
 const double pi = 3.1415926535897932384626433832795028841971693993751;		// Pi, NB added to significant digits
 const double dcut = 1.12246204830937298142;					// Cutoff distance in Lennard-Jones = 2 ^ (1/6)

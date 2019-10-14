@@ -53,24 +53,39 @@ void VERTEX::compute_neg_VGrads(INTERFACE* boundary/*, char constraintFlag*/)
 }
 
 // Compute the force on a given vertex due to the stretching energy penalty:
-void VERTEX::stretching_forces(INTERFACE* boundary)
+void VERTEX::stretching_forces(INTERFACE* boundary, char bucklingFlag)
 {
   VECTOR3D temp_sforce;       // The stretching force due to one edge on the vertex.
   sforce = VECTOR3D(0,0,0);   // The net stretching force due to all edges on the vertex (iterative sum of the above).
-  
-  for (unsigned int i = 0; i < itsE.size(); i++)
-  {
-    double l = itsE[i]->length();
-    double l0 = itsE[i]->l0;
 
-    temp_sforce = ( (l - l0) / l ) ^ (posvec - itsE[i]->opposite(this)->posvec);
-    
-    temp_sforce = temp_sforce ^ (1.0 / (l0 * l0) );
-    
-    sforce += temp_sforce;
+  if (bucklingFlag == 'n'){
+      for (unsigned int i = 0; i < itsE.size(); i++)
+      {
+          double l = itsE[i]->length();
+          double l0 = itsE[i]->l0;
+
+          temp_sforce = ( (l - l0) / l ) ^ (posvec - itsE[i]->opposite(this)->posvec);
+
+          temp_sforce = temp_sforce ^ (1.0 / (l0 * l0) );
+
+          sforce += temp_sforce;
+      }
+      sforce *= (-1) * boundary->sconstant * boundary->avg_edge_length * boundary->avg_edge_length;
   }
-  
-  sforce *= (-1) * boundary->sconstant * boundary->avg_edge_length * boundary->avg_edge_length;
+  else {
+      for (unsigned int i = 0; i < itsE.size(); i++)
+      {
+          double l = itsE[i]->length();
+          double l0 = boundary->avg_edge_length;
+
+          temp_sforce = ( (l - l0) / l ) ^ (posvec - itsE[i]->opposite(this)->posvec);
+          //temp_sforce = ( (l - l0) / l ) ^ (posvec - itsE[i]->opposite(this)->posvec);
+
+          sforce += temp_sforce;
+      }
+      sforce *= (-1) * boundary->sconstant;
+  }
+
 }
 
 // (2017.09.17 NB added.)  Compute the force on a given vertex due to the surface tension energy penalty:

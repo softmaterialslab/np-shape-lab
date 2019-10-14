@@ -87,7 +87,7 @@ public:
 
     void
     compute_neg_VGrads(INTERFACE */*, char*/); // 2017.09.16 NB added:  Compute given vertex net area & volume gradient.
-    void stretching_forces(INTERFACE *);
+    void stretching_forces(INTERFACE *, char);
 
     void tension_forces(INTERFACE *);           // 2017.09.16 NB added:  Compute the tension forces on a given vertex.
     void volume_tension_forces(INTERFACE *);    // 2019.08.16 NB added:  Comptue volume tension forces on a given vertex.

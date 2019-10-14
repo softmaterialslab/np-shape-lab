@@ -685,7 +685,7 @@ void INTERFACE::compute_local_energies_by_component() {
 
 // Compute the membrane-wide energies at a given step (num), component-wise {kinetic, BE, SE, TE, VE, LJ, ES} respectively:
 // This produces the "energy_in_parts" output file and calculates the quantities used in "energy_nanomembrane".
-void INTERFACE::compute_energy(int num, const double scalefactor) {
+void INTERFACE::compute_energy(int num, const double scalefactor, char bucklingFlag) {
 
     // Initialize & compute net kinetic energy:
     kenergy = 0;
@@ -721,12 +721,20 @@ void INTERFACE::compute_energy(int num, const double scalefactor) {
 
     // Initialize, compute, and output the net stretching energy:
     double senergy = 0;
-    for (unsigned int i = 0; i < E.size(); i++) {
-        double stretched = (E[i].length() - E[i].l0);
-        //     senergy += 0.5 * sconstant * stretched * stretched;
-        senergy += 0.5 * sconstant * stretched * stretched / (E[i].l0 * E[i].l0);
+    if(bucklingFlag == 'n'){
+        for (unsigned int i = 0; i < E.size(); i++) {
+            double stretched = (E[i].length() - E[i].l0);
+            senergy += 0.5 * sconstant * stretched * stretched / (E[i].l0 * E[i].l0);
+        }
+        senergy = senergy * avg_edge_length * avg_edge_length;
     }
-    senergy = senergy * avg_edge_length * avg_edge_length;
+    else {
+        for (unsigned int i = 0; i < E.size(); i++) {
+            //double stretched = (E[i].length() - E[i].l0);
+            double stretched = (E[i].length() - avg_edge_length);
+            senergy += 0.5 * sconstant * stretched * stretched;
+        }
+    }
     penergy += senergy;
     if (world.rank() == 0)
         output << senergy << " ";
