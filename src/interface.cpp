@@ -369,7 +369,7 @@ void INTERFACE::assign_random_q_values(double q_strength, double alpha, int num_
 
     // Randomize both the charge state list (for pH studies) and vertex area list (for normalization of all methods):
     if (randomFlag == 'y'){
-        srand(time(0));
+        srand(123456);
         random_shuffle(chargeStateList.begin(), chargeStateList.end());
         random_shuffle(randomAreaList.begin(), randomAreaList.end());
     }
