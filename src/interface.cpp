@@ -546,7 +546,7 @@ while (counterions.size() != total_counterions) {
             continuewhile = true;        // Avoid overlapping with existing ions.
         if (continuewhile)
             continue;
-    counterions.push_back(PARTICLE(int(counterions.size()) + 1, ion_diameter, counterion_valency, counterion_valency * 1.0, 1.0, posvec));
+    counterions.push_back(PARTICLE(int(counterions.size()) + 1, ion_diameter, counterion_valency, counterion_valency * -1.0, 1.0, posvec));
 }
 if (world.rank() == 0) {
 ofstream listcounterions("outfiles/counterions.xyz", ios::out);
