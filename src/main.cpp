@@ -49,6 +49,7 @@ Testing parameters: echo 3 4 100 35 0.0001 300 0.8 0 1 1
 #include "vertex.h"
 #include "edge.h"
 #include "face.h"
+#include "particle.h"
 #include "control.h"
 #include "functions.h"
 #include "thermostat.h"
@@ -58,7 +59,7 @@ Testing parameters: echo 3 4 100 35 0.0001 300 0.8 0 1 1
 using namespace boost::program_options;
 
 // Declaring function to initiate and propagate the MD (NB added char = constraint flag):
-void md_interface(INTERFACE &, vector<THERMOSTAT> &, CONTROL &, char, char, char, const double scalefactor);
+void md_interface(INTERFACE &, vector<PARTICLE> &, vector<THERMOSTAT> &, CONTROL &, char, char, char, const double scalefactor, double box_radius);
 
 //MPI boundary parameters
 unsigned int lowerBound;
@@ -92,8 +93,13 @@ int main(int argc, const char *argv[]) {
     double unit_radius_sphere, youngsModulus, q_strength, alpha, conc_out, z_out; // radius (in nm), net charge (if all charged), fractional q-occupancy, salt conc (MOLAR), salt valency
     int numPatches;
     double fracChargedPatch;
-    char randomFlag, offFlag, geomConstraint, bucklingFlag, constraintForm;
+    char randomFlag, offFlag, geomConstraint, bucklingFlag, constraintForm, counterionFlag;
     string externalPattern;
+
+    // Counterion Initializations:
+    double packing_fraction, box_radius;
+    int counterion_valency;
+    vector<PARTICLE> counterions;
 
     // Control of the dynamics:
     CONTROL mdremote;
@@ -128,7 +134,14 @@ int main(int argc, const char *argv[]) {
              "Surface area fraction of the patch (if N = 2, otherwise irrelevant).")
             ("externalPattern,E", value<string>(&externalPattern)->default_value("None"),
              "Filename of pattern to be imported (without the '.dat' extension).")
-                 // Virtual Parameters:
+                // Physical Parameters for counterion condensation:
+            ("counterionFlag,I", value<char>(&counterionFlag)->default_value('n'),
+             "Flag specifying if explicit counterions should be present, 'y' for yes.")
+            ("packingFraction,P", value<double>(&packing_fraction)->default_value(0.01),
+             "NP packing fraction determining total box size.")
+            ("counterionValency,Z", value<int>(&counterion_valency)->default_value(1),
+             "Valency of the counterions.")
+                // Virtual Parameters:
             ("totalTime,S", value<int>(&mdremote.steps)->default_value(250000),
              "Duration of the simulation (total timesteps).")
             ("timestep,d", value<double>(&mdremote.timestep)->default_value(0.001),
@@ -161,7 +174,7 @@ int main(int argc, const char *argv[]) {
              "The frequency of making off files")
             ("moviefreq,M", value<int>(&mdremote.moviefreq)->default_value(1000),
              "The frequency of shooting the movie")
-            ("povfreq,P", value<int>(&mdremote.povfreq)->default_value(100000),
+            ("povfreq,V", value<int>(&mdremote.povfreq)->default_value(100000),
              "The frequency of making povray files")
             ("writedata,W", value<int>(&mdremote.writedata)->default_value(500),
              "frequency of dumping thermo time series (after 1K steps)");
@@ -170,6 +183,9 @@ int main(int argc, const char *argv[]) {
     store(parse_command_line(argc, argv, desc), vm);
     notify(vm);
 
+    // Compute the box radius (where NP radius is unit length so it is not found here):
+    if(counterionFlag != 'y') packing_fraction = 1.0;
+    box_radius = pow(1 / packing_fraction,1.0/3.0);
 
     // Compute the 2D Young's Modulus (in kB*T/nm^2) from the reduced stretching constant specified as input:
     youngsModulus = boundary.sconstant / (unit_radius_sphere * unit_radius_sphere);  // For information purposes only.
@@ -214,7 +230,7 @@ int main(int argc, const char *argv[]) {
         boundary.inv_kappa_out =
                 (0.257 / sqrt(z_out * boundary.lB_out * unit_radius_sphere * conc_out)) / unit_radius_sphere;
 
-    // Generate the membrane:
+    // Generate the membrane, assign charge to vertices:
     boundary.discretize(disc1, disc2);            // discretize the interface
     if (disc1 != 0 || disc2 != 0) {
         if (externalPattern == "None") 
@@ -222,6 +238,18 @@ int main(int argc, const char *argv[]) {
         else 
 			  boundary.assign_external_q_values(q_strength, externalPattern);
 	 }
+
+    //  Assess total actual charge on the membrane for record & to place the correct number of counterions:
+    double q_actual = 0;
+    for (unsigned int i = 0; i < boundary.V.size(); i++) {
+        q_actual += boundary.V[i].q;
+    }
+
+    // Populate the box with counterions, if requested:
+    if(counterionFlag == 'y') {
+        boundary.put_counterions(q_actual, unit_radius_sphere, box_radius, counterions, counterion_valency);
+        cout << "Counterions have been placed inside the box." << endl;
+    }
 
     boundary.dressup(lambda_a, lambda_v);            // Compute initial normals, areas, and volumes.
 
@@ -256,11 +284,8 @@ int main(int argc, const char *argv[]) {
 #pragma omp parallel default(shared)
         {
             if (omp_get_thread_num() == 0) {
-                printf("The app comes with MPI and OpenMP (Hybrid) parallelization)\n");
                 printf("Number of MPI processes used %d\n", numOfNodes);
                 printf("Number of OpenMP threads per MPI process %d\n", omp_get_num_threads());
-                printf("Make sure that number of grid points / ions is greater than %d\n",
-                       omp_get_num_threads() * numOfNodes);
             }
         }
     }
@@ -299,9 +324,12 @@ int main(int argc, const char *argv[]) {
         cout << "Rigid geometric constraint: " << geomConstraint << endl;
 
         cout << "\n===================\nElectrostatics\n===================\n";
-        cout << "Total charge on membrane: " << q_strength << endl;
+        cout << "Total charge on membrane (if homogeneously charged): " << q_strength << endl;
         cout << "Fractional charge occupancy (alpha): " << alpha << endl;
-        //cout << "The number of patches (divisions) is: " << num_divisions << endl;
+        cout << "The number of patches is: " << numPatches << endl;
+        cout << "The size of each patch is: " << fracChargedPatch << endl;
+        cout << "The name of the external file used to specify charge patterning is: " << externalPattern << endl;
+        cout << "Final actual charge on membrane: " << q_actual << endl;
         cout << "Salt concentration: " << conc_out << endl;
         cout << "Debye length: " << boundary.inv_kappa_out << endl;
         cout << "Bjerrum length: " << boundary.lB_out << endl;
@@ -347,7 +375,10 @@ int main(int argc, const char *argv[]) {
         list_out << "\n===================\nElectrostatics\n===================\n";
         list_out << "Total charge on membrane: " << q_strength << endl;
         list_out << "Fractional charge occupancy (alpha): " << alpha << endl;
-        //list_out << "The number of patches (divisions) is: " << num_divisions << endl;
+        list_out << "The number of patches is: " << numPatches << endl;
+        list_out << "The size of each patch is: " << fracChargedPatch << endl;
+        list_out << "The name of the external file used to specify charge patterning is: " << externalPattern << endl;
+        list_out << "Final actual charge on membrane: " << q_actual << endl;
         list_out << "Salt concentration: " << conc_out << endl;
         list_out << "Debye length: " << boundary.inv_kappa_out << endl;
         list_out << "Bjerrum length: " << boundary.lB_out << endl;
@@ -366,7 +397,7 @@ int main(int argc, const char *argv[]) {
         list_out << "Off-file loaded: " << offFlag << endl;
 
         // (NB added) Print the initial state in the movie file, prior to MD:
-        interface_movie(0, boundary.V, boundary);  // NB added.  Note, calls this "time step -1" in movie file.
+        interface_movie(0, boundary.V, counterions, box_radius);  // NB added.  Note, calls this "time step -1" in movie file.
 
     }
     // Initiate MD of the boundary/membrane:
@@ -395,7 +426,7 @@ int main(int argc, const char *argv[]) {
         upperBound = boundary.V.size() - 1;
     }
 
-    md_interface(boundary, real_bath, mdremote, geomConstraint, bucklingFlag, constraintForm, scalefactor);
+    md_interface(boundary, counterions, real_bath, mdremote, geomConstraint, bucklingFlag, constraintForm, scalefactor, box_radius);
     boundary.compute_local_energies(scalefactor);
     boundary.compute_local_energies_by_component();
 
