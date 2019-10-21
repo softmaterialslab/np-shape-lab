@@ -47,7 +47,7 @@ void initialize_vertex_velocities_to_zero(vector<VERTEX> &V) {
 }
 
 // interface movie for VMD
-void interface_movie(int num, vector<VERTEX> &V, INTERFACE &dsphere) {
+void interface_movie(int num, vector<VERTEX> &V, vector<PARTICLE> &counterions, double box_radius) {
     if (world.rank() == 0) {
         ofstream outdump("outfiles/p.lammpstrj", ios::app);
 
@@ -58,11 +58,11 @@ void interface_movie(int num, vector<VERTEX> &V, INTERFACE &dsphere) {
         outdump << "ITEM: TIMESTEP" << endl;
         outdump << num - 1 << endl;
         outdump << "ITEM: NUMBER OF ATOMS" << endl;
-        outdump << V.size() << endl;
+        outdump << V.size() + counterions.size() << endl;
         outdump << "ITEM: BOX BOUNDS" << endl;
-        outdump << -1 << "\t" << 1 << endl;
-        outdump << -1 << "\t" << 1 << endl;
-        outdump << -1 << "\t" << 1 << endl;
+        outdump << -box_radius << "\t" << box_radius << endl;
+        outdump << -box_radius << "\t" << box_radius << endl;
+        outdump << -box_radius << "\t" << box_radius << endl;
         outdump << "ITEM: ATOMS index type x y z Vq Va Vq/a" << endl;
         string type;
         for (unsigned int i = 0; i < V.size(); i++) {
@@ -73,6 +73,10 @@ void interface_movie(int num, vector<VERTEX> &V, INTERFACE &dsphere) {
             outdump << i << "\t" << type << "\t" << V[i].posvec.x << "\t" << V[i].posvec.y << "\t" << V[i].posvec.z
                     << "\t"
                     << V[i].q << "\t" << V[i].itsarea << "\t" << (V[i].q / V[i].itsarea) << endl;
+        }
+        for (unsigned int i = 0; i < counterions.size(); i++) {
+            outdump << i + V.size() << "\t" << 2 << "\t" << counterions[i].posvec.x << "\t" << counterions[i].posvec.y
+            << "\t" << counterions[i].posvec.z << "\t" << counterions[i].q << "\t" << 0 << "\t" << 0 << endl;
         }
         outdump.close();
     }

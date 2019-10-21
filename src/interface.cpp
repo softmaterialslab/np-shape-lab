@@ -3,6 +3,7 @@
 #include "interface.h"
 #include "functions.h"
 #include "newenergies.h"
+#include "particle.h"
 #include <algorithm>
 #include <list>
 #include <sstream>
@@ -26,6 +27,7 @@ void INTERFACE::set_up(double unit_radius_sphere) {
     return;
 }
 
+// %%% NP Mesh Functionality: %%%
 // Dress up the mesh with normals areas and volume elements:
 void INTERFACE::dressup(double _lambda_a, double _lambda_v) {
     for (unsigned int i = 0; i < F.size(); i++) {
@@ -61,32 +63,6 @@ void INTERFACE::dressup(double _lambda_a, double _lambda_v) {
 
     lambda_a = _lambda_a;
     lambda_v = _lambda_v;
-}
-
-/*
-* This function reads an off file and moves all the vertices to the points
-* specified in the off file.  This will only work if there was no edge
-* flipping, as the connectivity is assumed to be identical to the initial
-* connectivity (for simplicity).
-*/
-void INTERFACE::load_configuration(string filename) {
-    ifstream in(filename.c_str(), ios::in);
-    if (!in) {
-        if (world.rank() == 0)
-            cout << "File could not be opened" << endl;
-        exit(1);
-    }
-    string dummy;
-    unsigned int _nv, _ne, _nf;
-    if (world.rank() == 0) {
-        in >> dummy >> _nv >> _nf >> _ne;
-        cout << V.size() << " " << E.size() << " " << F.size() << " ";
-        cout << _nv << " " << _ne << " " << _nf << "\n";
-    }
-    assert(_nv == V.size() && _ne == E.size() && _nf == F.size());
-    if (world.rank() == 0)
-        for (unsigned int i = 0; i < V.size(); i++)
-            in >> V[i].posvec.x >> V[i].posvec.y >> V[i].posvec.z;
 }
 
 // Discretize the mesh:
@@ -278,6 +254,27 @@ void INTERFACE::discretize(unsigned int disc1, unsigned int disc2) {
     return;
 }
 
+//  Load off-file for restarting pre-existing simulations (only works if there was no edge-flipping, same connectivity):
+void INTERFACE::load_configuration(string filename) {
+    ifstream in(filename.c_str(), ios::in);
+    if (!in) {
+        if (world.rank() == 0)
+            cout << "File could not be opened" << endl;
+        exit(1);
+    }
+    string dummy;
+    unsigned int _nv, _ne, _nf;
+    if (world.rank() == 0) {
+        in >> dummy >> _nv >> _nf >> _ne;
+        cout << V.size() << " " << E.size() << " " << F.size() << " ";
+        cout << _nv << " " << _ne << " " << _nf << "\n";
+    }
+    assert(_nv == V.size() && _ne == E.size() && _nf == F.size());
+    if (world.rank() == 0)
+        for (unsigned int i = 0; i < V.size(); i++)
+            in >> V[i].posvec.x >> V[i].posvec.y >> V[i].posvec.z;
+}
+
 EDGE *INTERFACE::edge_between(VERTEX *v1, VERTEX *v2) {
     for (unsigned int i = 0; i < v1->itsE.size(); i++) {
         if ((v1->itsE[i])->opposite(v1) == v2)
@@ -286,39 +283,6 @@ EDGE *INTERFACE::edge_between(VERTEX *v1, VERTEX *v2) {
     return NULL;
     //     if((*itsE[i]).opposite(v1)==v2)
 }
-
-// void INTERFACE::assign_q_spots(int num_spots, int spot_size, double q_strength)
-// {
-// 	int    NChargedV = num_spots * spot_size;
-//     
-//     assert(NChargedV <= boundary.V.size());                       // Verify it isn't > possible.
-//     
-//     double qEach = q_strength / boundary.V.size();                // Assign charge in consistent fashion with pH.
-// 	cout << "Number of charged vertices:  " << NChargedV << "\n"; // Note:  q_str = charge were all vertices charged.
-//                                                                   // Net charge here = qEach*NChargedV .
-// 	for (unsigned int i = 0; i<number_of_vertices; i++)
-// 		V[i].q = 0;                                               // At first, assign all vertices zero charge.
-// 
-//     
-// 
-//     int size = 0;
-//     list<int> vertexQueue;                                    // The single entity "vector" to be charged.
-//     vertexQueue.push_back(0);                                 // Adding an entry to the "vector".
-//     while (!vertexQueue.empty() && size < spot_size)
-//     {
-//         int cur = vertexQueue.front();                        // Reference to the first element in the "vector".
-//         vertexQueue.pop_front();                              // Deletes the first element.
-//         if (V[cur].q == 0)                                    // Checks to see if vertex (q) has already been updated.
-//         {
-//             size++;
-//             V[cur].q = qplus;
-//             for (unsigned int j = 0; j<V[cur].itsE.size(); j++)
-//                 vertexQueue.push_back(V[cur].itsE[j]->opposite(&V[cur])->index);
-//         }
-//     }
-// 	//assign_boundary_edges();
-// 	assign_dual_boundary_edges();
-// }
 
 void INTERFACE::assign_dual_boundary_edges() {
     for (unsigned int i = 0; i < number_of_edges; i++)
@@ -344,13 +308,11 @@ void INTERFACE::assign_random_q_values(double q_strength, double alpha, int num_
         permutations.push_back(pair<double, int>(V[i].posvec.z, i));
     sort(permutations.begin(), permutations.end());
     assert(num_divisions >= 1 && num_divisions <= 6); // Verify the prescribed number of divisions is supported.
-    if (number_of_vertices % num_divisions == 0)
+    if (number_of_vertices % num_divisions != 0)
         if (world.rank() == 0)
             cout << "Warning:  The number of vertices modulo the number of divisions is not zero; the closest approximation will be used." << endl;
 		  
-    //double q = q_strength / number_of_vertices;
-
-    // Define a vector containing the to-be-randomized charge occupancy information:
+        // Define a vector containing the to-be-randomized charge occupancy information:
     vector<int> chargeStateList;
     // Begin the list with values representing charged vertices:
     for (unsigned int i = 1; i <= alpha * number_of_vertices; i++) {
@@ -442,6 +404,25 @@ void INTERFACE::assign_random_q_values(double q_strength, double alpha, int num_
             V[permutations[i].second].q = 0;
     }
     assign_dual_boundary_edges();
+
+    //  Assess total actual charge on the membrane (which may be less than the desired amount due to shuffling):
+    double q_actual = 0.;
+    for (unsigned int i = 0; i < V.size(); i++) {
+        q_actual += V[i].q;
+    }
+
+    //  Assess the target total charge, to scale charged vertices by to achieve it:
+    double q_target;
+    if (num_divisions == 1) q_target = round(q_strength); // Round ensures electroneutrality with counterions.
+    else if (num_divisions == 2) q_target = round(fracChargedPatch * q_strength);
+    else if (num_divisions >= 3) q_target = round(ceil(0.5 * num_divisions) * fracChargedPatch * q_strength);
+        // 'Ceil' necessary as the number of charged patches is always >= number of uncharged patches by design above.
+
+    //  Scale the vertices' charges to achieve the target net charge exactly:
+    for (unsigned int i = 0; i < V.size(); i++) {
+        V[i].q = V[i].q * (q_target / q_actual);
+    }
+
 /*	if (0)
 	{
 		for (i = 0; i<number_of_vertices; i++)
@@ -483,207 +464,105 @@ void INTERFACE::assign_external_q_values(double q_strength, string externalPatte
     }
 }
 
-// Compute the spatial energetics profiles on the membrane (elastic, electrostatic), say for visualization:
-void INTERFACE::compute_local_energies(const double scalefactor) {
-    ofstream es_output("outfiles/local_electrostatic_E.off", ios::out);
-    if (world.rank() == 0)
-        es_output << "OFF\n" << V.size() << " "
-                  << F.size() << " " << E.size() << "\n";
-    vector<double> es_energy(F.size(), 0);
-    for (unsigned int i = 0; i < V.size(); i++)
-        for (unsigned int j = i + 1; j < V.size(); j++) {
-            double cur_E = energy_es_vertex_vertex(V[i], V[j], em, inv_kappa_out, scalefactor);
-            for (unsigned int k = 0; k < V[i].itsF.size(); k++)
-                es_energy[V[i].itsF[k]->index] += cur_E;
-            for (unsigned int k = 0; k < V[j].itsF.size(); k++)
-                es_energy[V[j].itsF[k]->index] += cur_E;
+//  Output information on the initial state of the NP mesh:
+void INTERFACE::output_configuration() {
+
+    ofstream list_config("outfiles/final_configuration.dat", ios::out);
+    if (world.rank() == 0) {
+        list_config << "# Number of Vertices= " << this->number_of_vertices << "\n";
+        list_config << "\nvertices index pos pos pos charge\n\n";
+        for (unsigned int i = 0; i < number_of_vertices; i++) {
+            list_config << V[i].index << "\t"
+                        << V[i].posvec.x << "\t"
+                        << V[i].posvec.y << "\t"
+                        << V[i].posvec.z << "\t"
+                        << V[i].q << "\n";
         }
-
-    // Hone in on the minimum and maximum values of per-face electrostatic energies:
-    double min_E = 1e100;
-    double max_E = -1e100;
-    for (unsigned int i = 0; i < F.size(); i++) {
-        if (es_energy[i] < min_E)
-            min_E = es_energy[i];
-        if (es_energy[i] > max_E)
-            max_E = es_energy[i];
+        list_config << "\n\n\n# Number of Edges= " << this->number_of_edges << "\n";
+        list_config << "\nedges: index vertex_index vertex_index length\n\n";
     }
-    // Output the minimum and maximum values for the scale bar (NB commented out normalization, see below):
-    if (world.rank() == 0)
-        cout << "electrostatic range" << "\t" << min_E << "\t" << max_E << endl;
-
-    // Dump the vertex coordinates alone (for all vertices):
-    if (world.rank() == 0)
-        for (unsigned int i = 0; i < V.size(); i++)
-            es_output << V[i].posvec.x << " "
-                      << V[i].posvec.y << " "
-                      << V[i].posvec.z << "\n";
-
-    // Dump the per-face vertex indices & energy per-face with given scaling:
-    for (unsigned int i = 0; i < F.size(); i++) {
-        double r, g, b, a;
-        //colormap((es_energy[F[i].index] - min_E) / (max_E - min_E), &r, &g, &b, &a); // This is Vikram's original, shifted & normalized.
-        colormap(es_energy[F[i].index], &r, &g, &b, &a); // NB added to compute non-relative quantities with no offset.
+    for (unsigned int i = 0; i < number_of_edges; i++) {
+        assert(E[i].itsV.size() == 2);
         if (world.rank() == 0)
-            es_output << "3 "
-                      << F[i].itsV[0]->index << " "
-                      << F[i].itsV[1]->index << " "
-                      << F[i].itsV[2]->index << " "
-                      << r << " "
-                      << g << " "
-                      << b << " "
-                      << a << "\n";
+            list_config << E[i].index << "\t"
+                        << E[i].itsV[0]->index << "\t"
+                        << E[i].itsV[1]->index << "\t"
+                        << E[i].length() << "\t"
+                        << "1\n";
     }
-
-    ofstream el_output("outfiles/local_elastic_E.off", ios::out);
-    if (world.rank() == 0)
-        el_output << "OFF\n" << V.size() << " "
-                  << F.size() << " " << E.size() << "\n";
-
-    vector<double> elastic_energy(E.size(), 0);
-    for (unsigned int i = 0; i < E.size(); i++) {
-        double stretched = (E[i].length() - E[i].l0);
-        double senergy = 0.5 * sconstant * stretched * stretched / (E[i].l0 * E[i].l0);
-        senergy *= avg_edge_length * avg_edge_length;
-        for (unsigned int k = 0; k < E[i].itsF.size(); k++)
-            elastic_energy[E[i].itsF[k]->index] += senergy;
-
-        double benergy = bkappa * (1 - E[i].itsS
-                                       / (4 * E[i].itsF[0]->itsarea * E[i].itsF[1]->itsarea));
-        for (unsigned int k = 0; k < E[i].itsF.size(); k++)
-            elastic_energy[E[i].itsF[k]->index] += benergy;
+    if (world.rank() == 0) {
+        list_config << "\n\n\n# Number of Faces= " << this->number_of_faces << "\n";
+        list_config << "\nfaces\n\n";
     }
-    if (world.rank() == 0)
-        for (unsigned int i = 0; i < V.size(); i++)
-            el_output << V[i].posvec.x << " "
-                      << V[i].posvec.y << " "
-                      << V[i].posvec.z << "\n";
-    min_E = 1e100;
-    max_E = -1e100;
-    for (unsigned int i = 0; i < F.size(); i++) {
-        if (elastic_energy[i] < min_E)
-            min_E = elastic_energy[i];
-        if (elastic_energy[i] > max_E)
-            max_E = elastic_energy[i];
-    }
-
-    // output min and max values for scale bar
-    // elastic
-    if (world.rank() == 0)
-        cout << "elastic range" << "\t" << min_E << "\t" << max_E << endl;
-
-    for (unsigned int i = 0; i < F.size(); i++) {
-        double r, g, b, a;
-        //colormap((elastic_energy[F[i].index] - min_E) / (max_E - min_E), &r, &g, &b, &a); // This is VJ's original version, shifted & normalized.
-        colormap(elastic_energy[F[i].index], &r, &g, &b,
-                 &a);   // NB absolute value version.
+    for (unsigned int i = 0; i < number_of_faces; i++) {
+        assert(F[i].itsV.size() == 3);
         if (world.rank() == 0)
-            el_output << "3 "
-                      << F[i].itsV[0]->index << " "
-                      << F[i].itsV[1]->index << " "
-                      << F[i].itsV[2]->index << " "
-                      << r << " "
-                      << g << " "
-                      << b << " "
-                      << a << "\n";
-    }
-
-}
-
-// Compute the spatial elastic energetics profiles per each component, separately:
-void INTERFACE::compute_local_energies_by_component() {
-    // Open the streams for both components:
-    ofstream el_output_bending("outfiles/local_bending_E.off", ios::out);
-    if (world.rank() == 0)
-        el_output_bending << "OFF\n" << V.size() << " "
-                  << F.size() << " " << E.size() << "\n";
-    ofstream el_output_stretching("outfiles/local_stretching_E.off", ios::out);
-    if (world.rank() == 0)
-        el_output_stretching << "OFF\n" << V.size() << " "
-                  << F.size() << " " << E.size() << "\n";
-
-    // Iterate over edges to determine both components:
-    vector<double> stretching_energy(E.size(), 0);
-    vector<double> bending_energy(E.size(), 0);
-    for (unsigned int i = 0; i < E.size(); i++) {
-        double stretched = (E[i].length() - E[i].l0);
-        double senergy = 0.5 * sconstant * stretched * stretched / (E[i].l0 * E[i].l0);
-        senergy *= avg_edge_length * avg_edge_length;
-        for (unsigned int k = 0; k < E[i].itsF.size(); k++)
-            stretching_energy[E[i].itsF[k]->index] += senergy;
-
-        double benergy = bkappa * (1 - E[i].itsS
-                                       / (4 * E[i].itsF[0]->itsarea * E[i].itsF[1]->itsarea));
-        for (unsigned int k = 0; k < E[i].itsF.size(); k++)
-            bending_energy[E[i].itsF[k]->index] += benergy;
-    }
-    if (world.rank() == 0)
-        for (unsigned int i = 0; i < V.size(); i++)
-            el_output_stretching << V[i].posvec.x << " "
-                      << V[i].posvec.y << " "
-                      << V[i].posvec.z << "\n";
-    if (world.rank() == 0)
-        for (unsigned int i = 0; i < V.size(); i++)
-            el_output_bending << V[i].posvec.x << " "
-                                 << V[i].posvec.y << " "
-                                 << V[i].posvec.z << "\n";
-    // Determine the maximum and minimum value for both components:
-    double min_E_stretching = 1e100;
-    double max_E_stretching = -1e100;
-    for (unsigned int i = 0; i < F.size(); i++) {
-        if (stretching_energy[i] < min_E_stretching)
-            min_E_stretching = stretching_energy[i];
-        if (stretching_energy[i] > max_E_stretching)
-            max_E_stretching = stretching_energy[i];
-    }
-    double min_E_bending = 1e100;
-    double max_E_bending = -1e100;
-    for (unsigned int i = 0; i < F.size(); i++) {
-        if (bending_energy[i] < min_E_bending)
-            min_E_bending = bending_energy[i];
-        if (bending_energy[i] > max_E_bending)
-            max_E_bending = bending_energy[i];
-    }
-
-    // Output min and max values for scale bars for each component:
-    if (world.rank() == 0)
-        cout << "stretching range" << "\t" << min_E_stretching << "\t" << max_E_stretching << endl;
-    // stretching
-    if (world.rank() == 0)
-        cout << "bending range" << "\t" << min_E_bending << "\t" << max_E_bending << endl;
-
-    // Output the final local profiles for each file:
-    for (unsigned int i = 0; i < F.size(); i++) {
-        double r, g, b, a;
-        //colormap((stretching_energy[F[i].index] - min_E_stretching) / (max_E_stretching - min_E_stretching), &r, &g, &b, &a); // This is VJ's original version, shifted & normalized.
-        colormap(stretching_energy[F[i].index], &r, &g, &b, &a);   // NB absolute value version.
-        if (world.rank() == 0)
-            el_output_stretching << "3 "
-                      << F[i].itsV[0]->index << " "
-                      << F[i].itsV[1]->index << " "
-                      << F[i].itsV[2]->index << " "
-                      << r << " "
-                      << g << " "
-                      << b << " "
-                      << a << "\n";
-    }
-    for (unsigned int i = 0; i < F.size(); i++) {
-        double r, g, b, a;
-        //colormap((bending_energy[F[i].index] - min_E_bending) / (max_E_bending - min_E_bending), &r, &g, &b, &a); // This is VJ's original version, shifted & normalized.
-        colormap(bending_energy[F[i].index], &r, &g, &b, &a);   // NB absolute value version.
-        if (world.rank() == 0)
-            el_output_bending << "3 "
-                                 << F[i].itsV[0]->index << " "
-                                 << F[i].itsV[1]->index << " "
-                                 << F[i].itsV[2]->index << " "
-                                 << r << " "
-                                 << g << " "
-                                 << b << " "
-                                 << a << "\n";
+            list_config << F[i].index << "\t"
+                        << F[i].itsV[0]->index << "\t"
+                        << F[i].itsV[1]->index << "\t"
+                        << F[i].itsV[2]->index << "\t"
+                        << "1\t1\n";
     }
 }
 
-// Compute the membrane-wide energies at a given step (num), component-wise {kinetic, BE, SE, TE, VE, LJ, ES} respectively:
+// %%% Counterion Functionality: %%%
+
+void INTERFACE::put_counterions(double q_actual, double unit_radius_sphere, double box_radius, vector<PARTICLE> &counterions, int counterion_valency) {
+
+// % Populate the list of counterions:
+// Verify the requested valency counterions can actually enforce electroneutrality (within precision):
+assert(int(q_actual) % counterion_valency == 0);
+// Compute the total number needed for ideal integer valency:
+unsigned int total_counterions = int(abs(q_actual / counterion_valency));
+// Compute the diameter of the ions in consistent reduced units:
+double ion_diameter = 0.6; // Diameter in nanometers
+ion_diameter = ion_diameter / unit_radius_sphere;
+// NP-Counterion touching distance:
+double r0 = (1 + 0.5 * ion_diameter);
+// Box-Counterion touching distance (spherical box):
+double r0_box = box_radius - 0.5 * ion_diameter;
+
+UTILITY ugsl;
+
+// generate counterions in the box
+while (counterions.size() != total_counterions) {
+    double x = gsl_rng_uniform(ugsl.r);
+    x = (1 - x) * (-r0_box) + x * (r0_box);
+    //x = x * r0_box;
+    double y = gsl_rng_uniform(ugsl.r);
+    y = (1 - y) * (-r0_box) + y * (r0_box);
+    //y = y * r0_box;
+    double z = gsl_rng_uniform(ugsl.r);
+    z = (1 - z) * (-r0_box) + z * (r0_box);
+    //z = z * r0_box;
+    VECTOR3D posvec = VECTOR3D(x, y, z);
+    if (posvec.GetMagnitude() < r0 + ion_diameter) // Avoid placing counterions within the NP.
+        continue;
+    if (posvec.GetMagnitude() >= box_radius - ion_diameter) // Avoid placing counterions outside of the box.
+        continue;
+    bool continuewhile = false;
+    for (unsigned int i = 0; i < counterions.size() && !continuewhile; i++)
+        if ((posvec - counterions[i].posvec).GetMagnitude() <= ion_diameter)
+            continuewhile = true;        // Avoid overlapping with existing ions.
+        if (continuewhile)
+            continue;
+    counterions.push_back(PARTICLE(int(counterions.size()) + 1, ion_diameter, counterion_valency, counterion_valency * -1.0, 1.0, posvec));
+}
+if (world.rank() == 0) {
+ofstream listcounterions("outfiles/counterions.xyz", ios::out);
+listcounterions << counterions.size() << endl;
+listcounterions << "counterions" << endl;
+
+for (unsigned int i = 0; i < counterions.size(); i++)
+listcounterions << "C" << setw(15) << counterions[i].posvec.x<< setw(15) << counterions[i].posvec.y
+<< setw(15) << counterions[i].posvec.z << setw(15)
+<< counterions[i].posvec.GetMagnitude() << endl;
+listcounterions.close();
+}
+return;
+}
+
+// Compute membrane-wide energies at a given step (num), component-wise {kinetic, BE, SE, TE, VE, LJ, ES} respectively:
 // This produces the "energy_in_parts" output file and calculates the quantities used in "energy_nanomembrane".
 void INTERFACE::compute_energy(int num, const double scalefactor, char bucklingFlag) {
 
@@ -832,43 +711,205 @@ void INTERFACE::compute_energy(int num, const double scalefactor, char bucklingF
     return;
 }
 
-void INTERFACE::output_configuration() {
+// %%% Post-processing Functionality: %%%
 
-    ofstream list_config("outfiles/final_configuration.dat", ios::out);
-    if (world.rank() == 0) {
-        list_config << "# Number of Vertices= " << this->number_of_vertices << "\n";
-        list_config << "\nvertices index pos pos pos charge\n\n";
-        for (unsigned int i = 0; i < number_of_vertices; i++) {
-            list_config << V[i].index << "\t"
-                        << V[i].posvec.x << "\t"
-                        << V[i].posvec.y << "\t"
-                        << V[i].posvec.z << "\t"
-                        << V[i].q << "\n";
+// Compute the spatial energetics profiles on the membrane (elastic, electrostatic), say for visualization:
+void INTERFACE::compute_local_energies(const double scalefactor) {
+    ofstream es_output("outfiles/local_electrostatic_E.off", ios::out);
+    if (world.rank() == 0)
+        es_output << "OFF\n" << V.size() << " "
+                  << F.size() << " " << E.size() << "\n";
+    vector<double> es_energy(F.size(), 0);
+    for (unsigned int i = 0; i < V.size(); i++)
+        for (unsigned int j = i + 1; j < V.size(); j++) {
+            double cur_E = energy_es_vertex_vertex(V[i], V[j], em, inv_kappa_out, scalefactor);
+            for (unsigned int k = 0; k < V[i].itsF.size(); k++)
+                es_energy[V[i].itsF[k]->index] += cur_E;
+            for (unsigned int k = 0; k < V[j].itsF.size(); k++)
+                es_energy[V[j].itsF[k]->index] += cur_E;
         }
-        list_config << "\n\n\n# Number of Edges= " << this->number_of_edges << "\n";
-        list_config << "\nedges: index vertex_index vertex_index length\n\n";
+
+    // Hone in on the minimum and maximum values of per-face electrostatic energies:
+    double min_E = 1e100;
+    double max_E = -1e100;
+    for (unsigned int i = 0; i < F.size(); i++) {
+        if (es_energy[i] < min_E)
+            min_E = es_energy[i];
+        if (es_energy[i] > max_E)
+            max_E = es_energy[i];
     }
-    for (unsigned int i = 0; i < number_of_edges; i++) {
-        assert(E[i].itsV.size() == 2);
+    // Output the minimum and maximum values for the scale bar (NB commented out normalization, see below):
+    if (world.rank() == 0)
+        cout << "electrostatic range" << "\t" << min_E << "\t" << max_E << endl;
+
+    // Dump the vertex coordinates alone (for all vertices):
+    if (world.rank() == 0)
+        for (unsigned int i = 0; i < V.size(); i++)
+            es_output << V[i].posvec.x << " "
+                      << V[i].posvec.y << " "
+                      << V[i].posvec.z << "\n";
+
+    // Dump the per-face vertex indices & energy per-face with given scaling:
+    for (unsigned int i = 0; i < F.size(); i++) {
+        double r, g, b, a;
+        //colormap((es_energy[F[i].index] - min_E) / (max_E - min_E), &r, &g, &b, &a); // This is Vikram's original, shifted & normalized.
+        colormap(es_energy[F[i].index], &r, &g, &b, &a); // NB added to compute non-relative quantities with no offset.
         if (world.rank() == 0)
-            list_config << E[i].index << "\t"
-                        << E[i].itsV[0]->index << "\t"
-                        << E[i].itsV[1]->index << "\t"
-                        << E[i].length() << "\t"
-                        << "1\n";
+            es_output << "3 "
+                      << F[i].itsV[0]->index << " "
+                      << F[i].itsV[1]->index << " "
+                      << F[i].itsV[2]->index << " "
+                      << r << " "
+                      << g << " "
+                      << b << " "
+                      << a << "\n";
     }
-    if (world.rank() == 0) {
-        list_config << "\n\n\n# Number of Faces= " << this->number_of_faces << "\n";
-        list_config << "\nfaces\n\n";
+
+    ofstream el_output("outfiles/local_elastic_E.off", ios::out);
+    if (world.rank() == 0)
+        el_output << "OFF\n" << V.size() << " "
+                  << F.size() << " " << E.size() << "\n";
+
+    vector<double> elastic_energy(E.size(), 0);
+    for (unsigned int i = 0; i < E.size(); i++) {
+        double stretched = (E[i].length() - E[i].l0);
+        double senergy = 0.5 * sconstant * stretched * stretched / (E[i].l0 * E[i].l0);
+        senergy *= avg_edge_length * avg_edge_length;
+        for (unsigned int k = 0; k < E[i].itsF.size(); k++)
+            elastic_energy[E[i].itsF[k]->index] += senergy;
+
+        double benergy = bkappa * (1 - E[i].itsS
+                                       / (4 * E[i].itsF[0]->itsarea * E[i].itsF[1]->itsarea));
+        for (unsigned int k = 0; k < E[i].itsF.size(); k++)
+            elastic_energy[E[i].itsF[k]->index] += benergy;
     }
-    for (unsigned int i = 0; i < number_of_faces; i++) {
-        assert(F[i].itsV.size() == 3);
+    if (world.rank() == 0)
+        for (unsigned int i = 0; i < V.size(); i++)
+            el_output << V[i].posvec.x << " "
+                      << V[i].posvec.y << " "
+                      << V[i].posvec.z << "\n";
+    min_E = 1e100;
+    max_E = -1e100;
+    for (unsigned int i = 0; i < F.size(); i++) {
+        if (elastic_energy[i] < min_E)
+            min_E = elastic_energy[i];
+        if (elastic_energy[i] > max_E)
+            max_E = elastic_energy[i];
+    }
+
+    // output min and max values for scale bar
+    // elastic
+    if (world.rank() == 0)
+        cout << "elastic range" << "\t" << min_E << "\t" << max_E << endl;
+
+    for (unsigned int i = 0; i < F.size(); i++) {
+        double r, g, b, a;
+        //colormap((elastic_energy[F[i].index] - min_E) / (max_E - min_E), &r, &g, &b, &a); // This is VJ's original version, shifted & normalized.
+        colormap(elastic_energy[F[i].index], &r, &g, &b,
+                 &a);   // NB absolute value version.
         if (world.rank() == 0)
-        list_config << F[i].index << "\t"
-                    << F[i].itsV[0]->index << "\t"
-                    << F[i].itsV[1]->index << "\t"
-                    << F[i].itsV[2]->index << "\t"
-                    << "1\t1\n";
+            el_output << "3 "
+                      << F[i].itsV[0]->index << " "
+                      << F[i].itsV[1]->index << " "
+                      << F[i].itsV[2]->index << " "
+                      << r << " "
+                      << g << " "
+                      << b << " "
+                      << a << "\n";
+    }
+
+}
+
+// Compute the spatial elastic energetics profiles per each component, separately:
+void INTERFACE::compute_local_energies_by_component() {
+    // Open the streams for both components:
+    ofstream el_output_bending("outfiles/local_bending_E.off", ios::out);
+    if (world.rank() == 0)
+        el_output_bending << "OFF\n" << V.size() << " "
+                          << F.size() << " " << E.size() << "\n";
+    ofstream el_output_stretching("outfiles/local_stretching_E.off", ios::out);
+    if (world.rank() == 0)
+        el_output_stretching << "OFF\n" << V.size() << " "
+                             << F.size() << " " << E.size() << "\n";
+
+    // Iterate over edges to determine both components:
+    vector<double> stretching_energy(E.size(), 0);
+    vector<double> bending_energy(E.size(), 0);
+    for (unsigned int i = 0; i < E.size(); i++) {
+        double stretched = (E[i].length() - E[i].l0);
+        double senergy = 0.5 * sconstant * stretched * stretched / (E[i].l0 * E[i].l0);
+        senergy *= avg_edge_length * avg_edge_length;
+        for (unsigned int k = 0; k < E[i].itsF.size(); k++)
+            stretching_energy[E[i].itsF[k]->index] += senergy;
+
+        double benergy = bkappa * (1 - E[i].itsS
+                                       / (4 * E[i].itsF[0]->itsarea * E[i].itsF[1]->itsarea));
+        for (unsigned int k = 0; k < E[i].itsF.size(); k++)
+            bending_energy[E[i].itsF[k]->index] += benergy;
+    }
+    if (world.rank() == 0)
+        for (unsigned int i = 0; i < V.size(); i++)
+            el_output_stretching << V[i].posvec.x << " "
+                                 << V[i].posvec.y << " "
+                                 << V[i].posvec.z << "\n";
+    if (world.rank() == 0)
+        for (unsigned int i = 0; i < V.size(); i++)
+            el_output_bending << V[i].posvec.x << " "
+                              << V[i].posvec.y << " "
+                              << V[i].posvec.z << "\n";
+    // Determine the maximum and minimum value for both components:
+    double min_E_stretching = 1e100;
+    double max_E_stretching = -1e100;
+    for (unsigned int i = 0; i < F.size(); i++) {
+        if (stretching_energy[i] < min_E_stretching)
+            min_E_stretching = stretching_energy[i];
+        if (stretching_energy[i] > max_E_stretching)
+            max_E_stretching = stretching_energy[i];
+    }
+    double min_E_bending = 1e100;
+    double max_E_bending = -1e100;
+    for (unsigned int i = 0; i < F.size(); i++) {
+        if (bending_energy[i] < min_E_bending)
+            min_E_bending = bending_energy[i];
+        if (bending_energy[i] > max_E_bending)
+            max_E_bending = bending_energy[i];
+    }
+
+    // Output min and max values for scale bars for each component:
+    if (world.rank() == 0)
+        cout << "stretching range" << "\t" << min_E_stretching << "\t" << max_E_stretching << endl;
+    // stretching
+    if (world.rank() == 0)
+        cout << "bending range" << "\t" << min_E_bending << "\t" << max_E_bending << endl;
+
+    // Output the final local profiles for each file:
+    for (unsigned int i = 0; i < F.size(); i++) {
+        double r, g, b, a;
+        //colormap((stretching_energy[F[i].index] - min_E_stretching) / (max_E_stretching - min_E_stretching), &r, &g, &b, &a); // This is VJ's original version, shifted & normalized.
+        colormap(stretching_energy[F[i].index], &r, &g, &b, &a);   // NB absolute value version.
+        if (world.rank() == 0)
+            el_output_stretching << "3 "
+                                 << F[i].itsV[0]->index << " "
+                                 << F[i].itsV[1]->index << " "
+                                 << F[i].itsV[2]->index << " "
+                                 << r << " "
+                                 << g << " "
+                                 << b << " "
+                                 << a << "\n";
+    }
+    for (unsigned int i = 0; i < F.size(); i++) {
+        double r, g, b, a;
+        //colormap((bending_energy[F[i].index] - min_E_bending) / (max_E_bending - min_E_bending), &r, &g, &b, &a); // This is VJ's original version, shifted & normalized.
+        colormap(bending_energy[F[i].index], &r, &g, &b, &a);   // NB absolute value version.
+        if (world.rank() == 0)
+            el_output_bending << "3 "
+                              << F[i].itsV[0]->index << " "
+                              << F[i].itsV[1]->index << " "
+                              << F[i].itsV[2]->index << " "
+                              << r << " "
+                              << g << " "
+                              << b << " "
+                              << a << "\n";
     }
 }
 
@@ -890,6 +931,39 @@ void INTERFACE::assign_boundary_edges() {
         }
     }
 }
+
+//void INTERFACE::assign_q_spots(int num_spots, int spot_size, double q_strength)
+// {
+// 	int    NChargedV = num_spots * spot_size;
+//
+//     assert(NChargedV <= V.size());                       // Verify it isn't > possible.
+//
+//     double qEach = q_strength / V.size();                // Assign charge in consistent fashion with pH.
+// 	cout << "Number of charged vertices:  " << NChargedV << "\n"; // Note:  q_str = charge were all vertices charged.
+//                                                                   // Net charge here = qEach*NChargedV .
+// 	for (unsigned int i = 0; i<number_of_vertices; i++)
+// 		V[i].q = 0;                                               // At first, assign all vertices zero charge.
+//
+//
+//
+//     int size = 0;
+//     list<int> vertexQueue;                                    // The single entity "vector" to be charged.
+//     vertexQueue.push_back(0);                                 // Adding an entry to the "vector".
+//     while (!vertexQueue.empty() && size < spot_size)
+//     {
+//         int cur = vertexQueue.front();                        // Reference to the first element in the "vector".
+//         vertexQueue.pop_front();                              // Deletes the first element.
+//         if (V[cur].q == 0)                                    // Checks to see if vertex (q) has already been updated.
+//         {
+//             size++;
+//             V[cur].q = qplus;
+//             for (unsigned int j = 0; j<V[cur].itsE.size(); j++)
+//                 vertexQueue.push_back(V[cur].itsE[j]->opposite(&V[cur])->index);
+//         }
+//     }
+// 	//assign_boundary_edges();
+// 	assign_dual_boundary_edges();
+// }
 
 //  NB has not changed this functional at all; it is exactly as originally received in May 2017.
 void INTERFACE::assign_q_values(int num_divisions, double q_strength) {

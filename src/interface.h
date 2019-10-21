@@ -8,6 +8,7 @@
 #include "vertex.h"
 #include "edge.h"
 #include "face.h"
+#include "particle.h"
 #include <map>
 
 class VERTEX;
@@ -126,8 +127,10 @@ public:
 
     void assign_external_q_values(double q_strength, string externalPattern);
 
+    void put_counterions(double q_actual, double unit_radius_sphere, double box_radius, vector<PARTICLE> &counterions, int counterion_valency);
+
     // ###  Energy computation operations: ###
-    void compute_local_energies(const double scalefactor);  // (O) Computes the local energetics profiles (creates local_*_E.off files).
+    void compute_local_energies(const double scalefactor);  // Computes the local energetics profiles (creates local_*_E.off files).
     void compute_local_energies_by_component();             // Computes local elastic energy profiles (creates similar files to above).
     void compute_energy(int, const double scalefactor, char bucklingFlag);     // Commputes energy of the system {KE_, PE_parts, PE_net, Membrane_net}.
 

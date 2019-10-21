@@ -24,6 +24,10 @@ Electrostatics
 ===================
 Total charge on membrane: 600
 Fractional charge occupancy (alpha): 1
+The number of patches is: 2
+The size of each patch is: 0.5
+The name of the external file used to specify charge patterning is: None
+Final actual charge on membrane: 300
 Salt concentration: 0.005
 Debye length: 0.430129
 Bjerrum length: 0.0714

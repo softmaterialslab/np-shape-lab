@@ -1,12 +1,13 @@
 #include "utility.h"
 #include "interface.h"
 #include "thermostat.h"
+#include "particle.h"
 #include "functions.h"
 #include "newforces.h"
 #include "newenergies.h"
 
-void md_interface(INTERFACE &boundary, vector<THERMOSTAT> &real_bath, CONTROL &cpmdremote, char geomConstraint, char bucklingFlag,
-                  char constraintForm, const double scalefactor) {
+void md_interface(INTERFACE &boundary, vector<PARTICLE> &counterions, vector<THERMOSTAT> &real_bath, CONTROL &cpmdremote, char geomConstraint, char bucklingFlag,
+                  char constraintForm, const double scalefactor, double box_radius) {
 
     double percentage = 0, percentagePre = -1;
 
@@ -206,7 +207,7 @@ void md_interface(INTERFACE &boundary, vector<THERMOSTAT> &real_bath, CONTROL &c
             if (num % cpmdremote.offfreq == 0)
                 interface_off(num, boundary);
             if (world.rank() == 0)
-                interface_movie(num, boundary.V, boundary);
+                interface_movie(num, boundary.V, counterions, box_radius);
         }
 
         /*							// NOTE COMMENTING OUT THE POVRAY BLOCK AS IT IS NOT NECESSARY FOR INVESTIGATIONS
