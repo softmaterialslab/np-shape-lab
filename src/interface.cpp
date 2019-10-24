@@ -562,14 +562,19 @@ listcounterions.close();
 return;
 }
 
-// Compute membrane-wide energies at a given step (num), component-wise {kinetic, BE, SE, TE, VE, LJ, ES} respectively:
+// Compute membrane-wide energies at a given step (num), component-wise {KE, BE, SE, TE, LJ, ES, VE} respectively:
 // This produces the "energy_in_parts" output file and calculates the quantities used in "energy_nanomembrane".
-void INTERFACE::compute_energy(int num, const double scalefactor, char bucklingFlag) {
+void INTERFACE::compute_energy(int num, vector<PARTICLE> &counterions, const double scalefactor, char bucklingFlag) {
 
-    // Initialize & compute net kinetic energy:
-    kenergy = 0;
+    // Initialize & compute net KE for both the mesh and counterions:
+    netMeshKE = 0;
     for (unsigned int i = 0; i < V.size(); i++)
-        kenergy += V[i].realke;
+        netMeshKE += V[i].ke;
+    netIonKE = 0;
+    for (unsigned int i = 0; i < counterions.size(); i++)
+        netIonKE += counterions[i].ke;
+    // Compute the total for output:
+    double totalKE = netMeshKE + netIonKE;
 
 /*	// linear area
 	penergy = lambda_a * (total_area);
@@ -583,12 +588,12 @@ void INTERFACE::compute_energy(int num, const double scalefactor, char bucklingF
     ofstream output("outfiles/energy_in_parts_kE_bE_sE_tE_ljE_esE.dat", ios::app);
     if (world.rank() == 0) {
         output << num << " ";
-        output << kenergy << " ";
+        output << totalKE << " ";
         // NOTE: constraints are not explicit like below, so commented out the energies; also for teaching purpose
         //  output << lambda_a * (total_area) << " ";
         //  output <<  lambda_v * (total_volume - ref_volume) * (total_volume - ref_volume) << " ";
     }
-    // Initialize, compute, & output the net bending energy:
+    // Initialize, compute, & output the net bending energy (mesh-only):
     double benergy = 0;
     for (unsigned int i = 0; i < E.size(); i++) {
         benergy += bkappa * (1 - E[i].itsS
@@ -598,7 +603,7 @@ void INTERFACE::compute_energy(int num, const double scalefactor, char bucklingF
     if (world.rank() == 0)
         output << benergy << " ";
 
-    // Initialize, compute, and output the net stretching energy:
+    // Initialize, compute, and output the net stretching energy (mesh-only):
     double senergy = 0;
     if(bucklingFlag == 'n'){
         for (unsigned int i = 0; i < E.size(); i++) {
@@ -618,6 +623,7 @@ void INTERFACE::compute_energy(int num, const double scalefactor, char bucklingF
     if (world.rank() == 0)
         output << senergy << " ";
 
+    // Initialize, compute, and output the net tension energy (mesh-only):
     double TEnergy = 0;
     //TEnergy = (sigma_a * (((total_Area_Vertices - ref_Area_Vertices) * (total_Area_Vertices - ref_Area_Vertices)) / ref_Area_Vertices)); // Quadratic in area difference from sphere.
     //TEnergy = (sigma_a * total_Area_Vertices * total_Area_Vertices / ref_Area_Vertices);		// Quadratic in absolute area.
@@ -626,51 +632,76 @@ void INTERFACE::compute_energy(int num, const double scalefactor, char bucklingF
     if (world.rank() == 0)
         output << TEnergy << " ";
 
+    // Initialize, compute, and (later) output the net volume tension energy (mesh-only):
     double VolTEnergy = 0;
     VolTEnergy = (sigma_v * ((total_volume - ref_volume) * (total_volume - ref_volume))); // Quadratic in volume difference from sphere.
     //VolTEnergy = (sigma_v * (total_volume  * total_volume));		// Quadratic in absolute volume.
     //VolTEnergy = (sigma_v * total_volume);    // Linear in absolute volume.
     penergy += VolTEnergy; // Output below to occur as last column.
 
-    // Initialize, compute, and output the net {LJ, ES} energies:
+    // Initialize, compute, and output the net {LJ, ES} energies (mesh & counterions):
     //Common MPI Message objects
-    vector<double> energyLJ(sizFVec, 0.0);
-    vector<double> energyES(sizFVec, 0.0);
+    vector<double> netMeshLJ(sizFVecMesh, 0.0);
+    vector<double> netMeshES(sizFVecMesh, 0.0);
+    vector<double> netIonsLJ(sizFVecIons,0.0);
+    vector<double> netIonsES(sizFVecIons,0.0);
     double lj_total = 0,lj_totalT = 0;
     double es_total = 0,es_totalT = 0;
-    unsigned int i=0, j=0;
+    int i=0, j=0;
 
+    // The mesh-mesh and mesh-ion components:
     #pragma omp parallel for schedule(dynamic) default(shared) private(i, j)
-    for (i = lowerBound; i <= upperBound; i++) {
-        double lj_total_temp = 0;
-        double es_total_temp = 0;
+    for (i = lowerBoundMesh; i <= upperBoundMesh; i++) {
+        double mesh_mesh_net_LJ_temp = 0;
+        double mesh_mesh_net_ES_temp = 0;
+        double mesh_ions_net_LJ_temp = 0;
+        double mesh_ions_net_ES_temp = 0;
         for (j = 0; j < V.size(); j++) {
             if (i == j) continue;
-            lj_total_temp += energy_lj_vertex_vertex(V[i], V[j], lj_length, elj);
-            es_total_temp += energy_es_vertex_vertex(V[i], V[j], em, inv_kappa_out, scalefactor);
+            mesh_mesh_net_LJ_temp += energy_lj_pair(V[i].posvec, V[j].posvec, lj_length, elj);
+            mesh_mesh_net_ES_temp += energy_es_pair(V[i], V[j], em, inv_kappa_out, scalefactor);
         }
-        energyLJ [i-lowerBound] = 0.5 * lj_total_temp ;
-        energyES[i-lowerBound] = 0.5 * es_total_temp;
+        mesh_mesh_net_LJ_temp = 0.5 * mesh_mesh_net_LJ_temp; // Cancel out double-counting in the mesh-mesh.
+        mesh_mesh_net_ES_temp = 0.5 * mesh_mesh_net_ES_temp;
+        for (j = 0; j < counterions.size(); j++) {
+            mesh_ions_net_LJ_temp += energy_lj_pair(V[i].posvec, counterions[j].posvec, lj_length, elj);
+            mesh_ions_net_ES_temp += energy_es_pair(V[i], counterions[j], em, inv_kappa_out, scalefactor);
+        }
+        netMeshLJ[i - lowerBoundMesh] = mesh_mesh_net_LJ_temp; // No need to cancel double counting here.
+        netMeshES[i - lowerBoundMesh] = mesh_mesh_net_ES_temp;
     }
 
-    for (i = lowerBound; i <= upperBound; i++) {
-        lj_total += energyLJ[i-lowerBound];
-        es_total += energyES[i-lowerBound];
+    for (i = lowerBoundMesh; i <= upperBoundMesh; i++) {
+        lj_total += netMeshLJ[i - lowerBoundMesh];
+        es_total += netMeshES[i - lowerBoundMesh];
+    }
+
+    // The ion-ion component:
+    #pragma omp parallel for schedule(dynamic) default(shared) private(i, j)
+    for (i = lowerBoundIons; i <= upperBoundIons; i++) {
+        double ion_ion_net_LJ_temp = 0;
+        double ion_ion_net_ES_temp = 0;
+        for (j = 0; j < counterions.size(); j++) {
+            if (i == j) continue;
+            ion_ion_net_LJ_temp += energy_lj_pair(counterions[i].posvec, counterions[j].posvec, lj_length, elj);
+            ion_ion_net_ES_temp += energy_es_pair(counterions[i], counterions[j], em, inv_kappa_out, scalefactor);
+        }
+        netIonsLJ[i - lowerBoundIons] = 0.5 * ion_ion_net_LJ_temp ;
+        netIonsES[i - lowerBoundIons] = 0.5 * ion_ion_net_ES_temp;
+    }
+
+    for (i = lowerBoundIons; i <= upperBoundIons; i++) {
+        lj_total += netIonsLJ[i - lowerBoundIons];
+        es_total += netIonsES[i - lowerBoundIons];
     }
 
     //MPI Operations
     if (world.size() > 1) {
-        //broadcasting using all_reduce = reduce + broadcast
-        //void all_reduce(const communicator & comm, const T & in_value, T & out_value, Op op);
-        //cout << "came here: "  << endl;
-
         all_reduce(world, lj_total, lj_totalT,std::plus<double>());
         all_reduce(world, es_total, es_totalT,std::plus<double>());
     }else{
-
         lj_totalT=lj_total;
         es_totalT=es_total;
-
     }
         penergy += lj_totalT + es_totalT;
 
@@ -707,7 +738,8 @@ void INTERFACE::compute_energy(int num, const double scalefactor, char bucklingF
 	penergy += line_tension_total;
 	//  output << line_tension_total << "\n";*/
 
-    energy = kenergy + penergy;
+    // Record (for output) the local net energy (excluding thermostats):
+    energy = netMeshKE + netIonKE + penergy;
     return;
 }
 
@@ -722,7 +754,7 @@ void INTERFACE::compute_local_energies(const double scalefactor) {
     vector<double> es_energy(F.size(), 0);
     for (unsigned int i = 0; i < V.size(); i++)
         for (unsigned int j = i + 1; j < V.size(); j++) {
-            double cur_E = energy_es_vertex_vertex(V[i], V[j], em, inv_kappa_out, scalefactor);
+            double cur_E = energy_es_pair(V[i], V[j], em, inv_kappa_out, scalefactor);
             for (unsigned int k = 0; k < V[i].itsF.size(); k++)
                 es_energy[V[i].itsF[k]->index] += cur_E;
             for (unsigned int k = 0; k < V[j].itsF.size(); k++)

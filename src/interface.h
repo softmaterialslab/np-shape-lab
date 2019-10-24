@@ -39,7 +39,7 @@ private:
         ar & ref_volume;
         ar & ref_Area_Vertices;
         ar & energy;
-        ar & kenergy;
+        ar & netMeshKE;
         ar & penergy;
         ar & lB_out;
         ar & inv_kappa_out;
@@ -72,7 +72,7 @@ public:
     double lambda_a, lambda_v, lambda_l;
     double bkappa;
     double ref_area, ref_volume, ref_Area_Vertices;         // (2017.09.19 NB added ref_Area_Vertices.)
-    double energy, kenergy, penergy;
+    double energy, netMeshKE, netIonKE, penergy;
 
     double lB_out;            // Bjerrum length outside
     double inv_kappa_out;            // debye length outside
@@ -132,7 +132,7 @@ public:
     // ###  Energy computation operations: ###
     void compute_local_energies(const double scalefactor);  // Computes the local energetics profiles (creates local_*_E.off files).
     void compute_local_energies_by_component();             // Computes local elastic energy profiles (creates similar files to above).
-    void compute_energy(int, const double scalefactor, char bucklingFlag);     // Commputes energy of the system {KE_, PE_parts, PE_net, Membrane_net}.
+    void compute_energy(int, vector<PARTICLE> &counterions, const double scalefactor, char bucklingFlag);     // Computes system energy.
 
     INTERFACE(double _ein = 1,
               double _eout = 1, double _lambda_a = 1, double _lambda_v = 1,

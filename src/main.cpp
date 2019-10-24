@@ -62,14 +62,14 @@ using namespace boost::program_options;
 void md_interface(INTERFACE &, vector<PARTICLE> &, vector<THERMOSTAT> &, CONTROL &, char, char, char, const double scalefactor, double box_radius);
 
 //MPI boundary parameters
-unsigned int lowerBound;
-unsigned int upperBound;
-unsigned int sizFVec;
-unsigned int extraElements;
 unsigned int lowerBoundMesh;
 unsigned int upperBoundMesh;
 unsigned int sizFVecMesh;
-unsigned int extraElementsMesh;
+//unsigned int extraElementsMesh;
+int lowerBoundIons;
+int upperBoundIons;
+int sizFVecIons;
+unsigned int extraElementsIons;
 mpi::environment env;
 mpi::communicator world;
 
@@ -84,7 +84,7 @@ int main(int argc, const char *argv[]) {
     double ein = epsilon_water;        // permittivity of inside medium
     double eout = epsilon_water;        // permittivity of outside medium
     double T, Q;                        // Temperature of the system, mass of thermostate (0 if inactive), timestep.
-    unsigned int chain_length_real;    // length of nose-hoover thermostat chain, 1 minimum, 1 means no thermostat
+    unsigned int chain_length_mesh;    // length of nose-hoover thermostat chain, 1 minimum, 1 means no thermostat
 
     INTERFACE boundary;                    // interface (modelled as soft LJ wall)
     unsigned int disc1, disc2;
@@ -100,6 +100,8 @@ int main(int argc, const char *argv[]) {
     double packing_fraction, box_radius;
     int counterion_valency;
     vector<PARTICLE> counterions;
+
+    cout << counterions.size() << endl;
 
     // Control of the dynamics:
     CONTROL mdremote;
@@ -150,7 +152,7 @@ int main(int argc, const char *argv[]) {
              "Target initial temperature (prior to annealing).")
             ("disc2,D", value<unsigned int>(&disc2)->default_value(8),
              "Discretization parameter 2")
-            ("chain_length_real,C", value<unsigned int>(&chain_length_real)->default_value(5),
+            ("chain_length_mesh,C", value<unsigned int>(&chain_length_mesh)->default_value(5),
              "Number of thermostat particles in the Nose-Hoover chain (plus 1).")
             ("thermostatMass,Q", value<double>(&Q)->default_value(.01),
              "Mass of the thermostat (higher means less strongly coupled).")
@@ -203,7 +205,7 @@ int main(int argc, const char *argv[]) {
 
     disc1 = 3;                                          //  Discretization parameters (h, k).
     alpha = 1.0;                                        //  Fractional charge occupancy.
-    if (chain_length_real == 1) Q = 0;                  //  Reduced mass of the thermostat particle(s)
+    if (chain_length_mesh == 1) Q = 0;                  //  Reduced mass of the thermostat particle(s)
 
     mdremote.QAnnealFac =
             1.00 + (mdremote.TAnnealFac / 10.0);        // Maintain previous scaling, same as before (fQ = 2) if fT = 10.
@@ -263,11 +265,11 @@ int main(int argc, const char *argv[]) {
 
     // Thermostat for MD of the interface:
     vector<THERMOSTAT> real_bath;        // thermostat for real system (interface + ions) ; no ions yet.
-    if (chain_length_real == 1)
+    if (chain_length_mesh == 1)
         real_bath.push_back(THERMOSTAT(0, T, 3 * boundary.V.size(), 0.0, 0, 0));
     else {
         real_bath.push_back(THERMOSTAT(Q, T, 3 * boundary.V.size(), 0, 0, 0));
-        while (real_bath.size() != chain_length_real - 1)
+        while (real_bath.size() != chain_length_mesh - 1)
             real_bath.push_back(THERMOSTAT(Q, T, 1, 0, 0, 0));
         real_bath.push_back(THERMOSTAT(0, T, 3 * boundary.V.size(), 0.0, 0, 0));    // dummy bath (has 0 mass)
     }
@@ -325,11 +327,12 @@ int main(int argc, const char *argv[]) {
 
         cout << "\n===================\nElectrostatics\n===================\n";
         cout << "Total charge on membrane (if homogeneously charged): " << q_strength << endl;
+        cout << "Final actual charge on membrane: " << q_actual << endl;
+        cout << "Number of simulated counterions: " << counterions.size() << endl;
         cout << "Fractional charge occupancy (alpha): " << alpha << endl;
         cout << "The number of patches is: " << numPatches << endl;
         cout << "The size of each patch is: " << fracChargedPatch << endl;
         cout << "The name of the external file used to specify charge patterning is: " << externalPattern << endl;
-        cout << "Final actual charge on membrane: " << q_actual << endl;
         cout << "Salt concentration: " << conc_out << endl;
         cout << "Debye length: " << boundary.inv_kappa_out << endl;
         cout << "Bjerrum length: " << boundary.lB_out << endl;
@@ -374,11 +377,12 @@ int main(int argc, const char *argv[]) {
 
         list_out << "\n===================\nElectrostatics\n===================\n";
         list_out << "Total charge on membrane: " << q_strength << endl;
+        list_out << "Final actual charge on membrane: " << q_actual << endl;
+        list_out << "Number of simulated counterions: " << counterions.size() << endl;
         list_out << "Fractional charge occupancy (alpha): " << alpha << endl;
         list_out << "The number of patches is: " << numPatches << endl;
         list_out << "The size of each patch is: " << fracChargedPatch << endl;
         list_out << "The name of the external file used to specify charge patterning is: " << externalPattern << endl;
-        list_out << "Final actual charge on membrane: " << q_actual << endl;
         list_out << "Salt concentration: " << conc_out << endl;
         list_out << "Debye length: " << boundary.inv_kappa_out << endl;
         list_out << "Bjerrum length: " << boundary.lB_out << endl;
@@ -412,18 +416,39 @@ int main(int argc, const char *argv[]) {
         rename("outfiles/local_bending_E.off", "outfiles/local_bending_E_initial.off");
     }*/
     //MPI Boundary calculation for ions
-    unsigned int rangeIons = boundary.V.size() / world.size() + 1.5;
-    lowerBound = world.rank() * rangeIons;
-    upperBound = (world.rank() + 1) * rangeIons - 1;
-    extraElements = world.size() * rangeIons - boundary.V.size();
-    sizFVec = upperBound - lowerBound + 1;
+    /*
+    unsigned int rangeMesh = boundary.V.size() / world.size() + 1.5;
+    lowerBoundMesh = world.rank() * rangeMesh;
+    upperBoundMesh = (world.rank() + 1) * rangeMesh - 1;
+    extraElementsMesh = world.size() * rangeMesh - boundary.V.size();
+    sizFVecMesh = upperBoundMesh - lowerBoundMesh + 1;
     if (world.rank() == world.size() - 1) {
-        upperBound = boundary.V.size() - 1;
-        sizFVec = upperBound - lowerBound + 1 + extraElements;
+        upperBoundMesh = boundary.V.size() - 1;
+        sizFVecMesh = upperBoundMesh - lowerBoundMesh + 1 + extraElementsMesh;
     }
     if (world.size() == 1) {
-        lowerBound = 0;
-        upperBound = boundary.V.size() - 1;
+        lowerBoundMesh = 0;
+        upperBoundMesh = boundary.V.size() - 1;
+    }
+*/
+    // MPI Boundary calculations for the mesh:
+    unsigned int rangeMesh = (boundary.V.size() + world.size() - 1) / (1.0 * world.size());
+    lowerBoundMesh = world.rank() * rangeMesh;
+    upperBoundMesh = (world.rank() + 1) * rangeMesh - 1;
+    //extraElementsMesh = world.size() * rangeMesh - boundary.V.size();
+    sizFVecMesh = rangeMesh;
+    if (world.rank() == world.size() - 1) {
+        upperBoundMesh = boundary.V.size() - 1;
+    }
+
+    // MPI Boundary calculations for the ions:
+    int rangeIons = (counterions.size() + world.size() - 1) / (1.0 * world.size());
+    lowerBoundIons = world.rank() * rangeIons;
+    upperBoundIons = (world.rank() + 1) * rangeIons - 1;
+    extraElementsIons = world.size() * rangeIons - counterions.size();
+    sizFVecIons = rangeIons;
+    if (world.rank() == world.size() - 1) {
+        upperBoundIons = counterions.size() - 1; // With zero counterions, this is negative, preventing loop evaluation.
     }
 
     md_interface(boundary, counterions, real_bath, mdremote, geomConstraint, bucklingFlag, constraintForm, scalefactor, box_radius);
