@@ -27,7 +27,7 @@ void INTERFACE::set_up(double unit_radius_sphere) {
     return;
 }
 
-// %%% NP Mesh Functionality: %%%
+// %%% NP Mesh Setup Functionality: %%%
 // Dress up the mesh with normals areas and volume elements:
 void INTERFACE::dressup(double _lambda_a, double _lambda_v) {
     for (unsigned int i = 0; i < F.size(); i++) {
@@ -405,22 +405,30 @@ void INTERFACE::assign_random_q_values(double q_strength, double alpha, int num_
     }
     assign_dual_boundary_edges();
 
-    //  Assess total actual charge on the membrane (which may be less than the desired amount due to shuffling):
-    double q_actual = 0.;
-    for (unsigned int i = 0; i < V.size(); i++) {
-        q_actual += V[i].q;
-    }
-
-    //  Assess the target total charge, to scale charged vertices by to achieve it:
-    double q_target;
-    if (num_divisions == 1) q_target = round(q_strength); // Round ensures electroneutrality with counterions.
-    else if (num_divisions == 2) q_target = round(fracChargedPatch * q_strength);
-    else if (num_divisions >= 3) q_target = round(ceil(0.5 * num_divisions) * fracChargedPatch * q_strength);
-        // 'Ceil' necessary as the number of charged patches is always >= number of uncharged patches by design above.
-
     //  Scale the vertices' charges to achieve the target net charge exactly:
-    for (unsigned int i = 0; i < V.size(); i++) {
-        V[i].q = V[i].q * (q_target / q_actual);
+    if (q_strength == 0){
+        for (unsigned int i = 0; i < V.size(); i++) {
+            V[i].q = 0;
+        }
+    }
+    else {
+        //  Assess total actual charge on the membrane (which may be less than the desired amount due to shuffling):
+        double q_actual = 0.;
+        for (unsigned int i = 0; i < V.size(); i++) {
+            q_actual += V[i].q;
+        }
+
+        //  Assess the target total charge, to scale charged vertices by to achieve it:
+        double q_target;
+        if (num_divisions == 1) q_target = round(q_strength); // Round ensures electroneutrality with counterions.
+        else if (num_divisions == 2) q_target = round(fracChargedPatch * q_strength);
+        else if (num_divisions >= 3) q_target = round(ceil(0.5 * num_divisions) * fracChargedPatch * q_strength);
+            // 'Ceil' necessary as number of charged patches is always >= number of uncharged patches by design above.
+
+        //  Scale the vertices' charges to achieve the target net charge exactly:
+        for (unsigned int i = 0; i < V.size(); i++) {
+            V[i].q = V[i].q * (q_target / q_actual);
+        }
     }
 
 /*	if (0)
@@ -455,7 +463,7 @@ void INTERFACE::assign_external_q_values(double q_strength, string externalPatte
         for(unsigned int i = 0; i < V.size(); i++) {
             V[i].q = 0;
         }
-    } else                // Warn the file could not be opened.
+    } else
     {
         cout << "Charge assignment file opened successfully.  Charging the mesh." << endl;
         while(inStream >> col1 >> col2) {
@@ -505,7 +513,7 @@ void INTERFACE::output_configuration() {
     }
 }
 
-// %%% Counterion Functionality: %%%
+// %%% Counterion Setup Functionality: %%%
 
 void INTERFACE::put_counterions(double q_actual, double unit_radius_sphere, double box_radius, vector<PARTICLE> &counterions, int counterion_valency) {
 
@@ -562,7 +570,9 @@ listcounterions.close();
 return;
 }
 
-// Compute membrane-wide energies at a given step (num), component-wise {KE, BE, SE, TE, LJ, ES, VE} respectively:
+// %%% Run-time & Post-processing Functionality: %%%
+
+// Compute membrane-wide energies at a given step (num), component-wise {totKE, BE, SE, TE, totLJ, totES, VE}:
 // This produces the "energy_in_parts" output file and calculates the quantities used in "energy_nanomembrane".
 void INTERFACE::compute_energy(int num, vector<PARTICLE> &counterions, const double scalefactor, char bucklingFlag) {
 
@@ -650,7 +660,7 @@ void INTERFACE::compute_energy(int num, vector<PARTICLE> &counterions, const dou
     int i=0, j=0;
 
     // The mesh-mesh and mesh-ion components:
-    #pragma omp parallel for schedule(dynamic) default(shared) private(i, j)
+#pragma omp parallel for schedule(dynamic) default(shared) private(i, j)
     for (i = lowerBoundMesh; i <= upperBoundMesh; i++) {
         double mesh_mesh_net_LJ_temp = 0;
         double mesh_mesh_net_ES_temp = 0;
@@ -677,7 +687,7 @@ void INTERFACE::compute_energy(int num, vector<PARTICLE> &counterions, const dou
     }
 
     // The ion-ion component:
-    #pragma omp parallel for schedule(dynamic) default(shared) private(i, j)
+#pragma omp parallel for schedule(dynamic) default(shared) private(i, j)
     for (i = lowerBoundIons; i <= upperBoundIons; i++) {
         double ion_ion_net_LJ_temp = 0;
         double ion_ion_net_ES_temp = 0;
@@ -703,7 +713,7 @@ void INTERFACE::compute_energy(int num, vector<PARTICLE> &counterions, const dou
         lj_totalT=lj_total;
         es_totalT=es_total;
     }
-        penergy += lj_totalT + es_totalT;
+    penergy += lj_totalT + es_totalT;
 
     /*
     if (world.rank() == 0) {
@@ -742,8 +752,6 @@ void INTERFACE::compute_energy(int num, vector<PARTICLE> &counterions, const dou
     energy = netMeshKE + netIonKE + penergy;
     return;
 }
-
-// %%% Post-processing Functionality: %%%
 
 // Compute the spatial energetics profiles on the membrane (elastic, electrostatic), say for visualization:
 void INTERFACE::compute_local_energies(const double scalefactor) {
