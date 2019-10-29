@@ -6,14 +6,14 @@
 #include "newforces.h"
 #include "newenergies.h"
 
-void md_interface(INTERFACE &boundary, vector<PARTICLE> &counterions, vector<THERMOSTAT> &real_bath, CONTROL &cpmdremote, char geomConstraint, char bucklingFlag,
+void md_interface(INTERFACE &boundary, vector<PARTICLE> &counterions, vector<THERMOSTAT> &mesh_bath, CONTROL &cpmdremote, char geomConstraint, char bucklingFlag,
                   char constraintForm, const double scalefactor, double box_radius) {
 
     double percentage = 0, percentagePre = -1;
 
     // Initialize the velocities to either the initial temperature or zero (choose which to comment out):
-    //initialize_vertex_velocities(boundary.V, real_bath);
-    initialize_vertex_velocities_to_zero(boundary.V);
+    //initialize_vertex_velocities(boundary.V, mesh_bath);
+    initialize_velocities_to_zero(boundary.V, counterions);
 
     // ### Calculate the intial net force on all vertices: ###
     force_calculation_init(boundary, scalefactor, bucklingFlag);
@@ -49,26 +49,31 @@ void md_interface(INTERFACE &boundary, vector<PARTICLE> &counterions, vector<THE
         cout << endl << "No rigid geometric constraint will be enforced, soft constraints only." << endl << endl;
 
     // NB added to provide the initial quantities (pre-MD):
-    boundary.compute_energy(0, scalefactor, bucklingFlag);
-    long double vertex_ke = vertex_kinetic_energy(boundary.V);
-    double real_bath_ke = bath_kinetic_energy(real_bath);
-    double real_bath_pe = bath_potential_energy(real_bath);
+    long double vertex_ke = compute_kinetic_energy(boundary.V);
+    long double ions_ke = compute_kinetic_energy(counterions);
+    boundary.compute_energy(0, counterions, scalefactor, bucklingFlag);
+    double real_bath_ke = bath_kinetic_energy(mesh_bath);
+    double real_bath_pe = bath_potential_energy(mesh_bath);
     VECTOR3D total_momentum = VECTOR3D(0, 0, 0);
     for (unsigned int i = 0; i < boundary.V.size(); i++)
         total_momentum += boundary.V[i].velvec;
-    double initNetEnergy = (boundary.energy + bath_kinetic_energy(real_bath) + bath_potential_energy(real_bath));
+    double initNetEnergy = (boundary.energy + bath_kinetic_energy(mesh_bath) + bath_potential_energy(mesh_bath));
+    double globalNetEnergy = boundary.energy + real_bath_ke + real_bath_pe;
     if (world.rank() == 0) {
-        list_energy << 0 << setw(15) << boundary.kenergy << setw(15) << boundary.penergy << setw(15)
-                    << boundary.energy << setw(15) << boundary.energy
-                                                      + real_bath_ke + real_bath_pe << setw(15) << real_bath_ke
-                    << setw(15) << real_bath_pe << endl;
+        list_energy << 0
+                    << setw(15) << boundary.netMeshKE + boundary.netIonKE // Net kinetic energy (mesh + ions)
+        << setw(15) << boundary.penergy // Net potential energy
+        << setw(15) << boundary.energy  // Local net energy (netMeshKE + netIonKE + penergy)
+        << setw(15) << globalNetEnergy // Global (conserved) net energy.
+        << setw(15) << real_bath_ke // Mesh bath KE
+        << setw(15) << real_bath_pe << endl; // Mesh bath PE
 
         // Compute and output the face-based net area & volumes:
         list_area << 0 << setw(15) << boundary.total_area << endl;
         list_volume << 0 << setw(15) << boundary.total_volume << endl;
 
         // Output the temperature (and optionally, thermostat parameters):
-        list_temperature << 0 << setw(15) << 2 * boundary.kenergy / (real_bath[0].dof * kB) << endl;
+        list_temperature << 0 << setw(15) << 2 * boundary.netMeshKE / (mesh_bath[0].dof * kB) << endl;
     }
 
     // For annealing, compute per-step fractional decrement in {T, Q} required for desired net decrement per procedure.
@@ -89,18 +94,18 @@ void md_interface(INTERFACE &boundary, vector<PARTICLE> &counterions, vector<THE
     for (int num = 1; num <= cpmdremote.steps; num++) {
         // Reverse update of Nose-Hoover chain
         // xi
-        for (int j = real_bath.size() - 1; j > -1; j--)
-            update_chain_xi(j, real_bath, cpmdremote.timestep, vertex_ke);
+        for (int j = mesh_bath.size() - 1; j > -1; j--)
+            update_chain_xi(j, mesh_bath, cpmdremote.timestep, vertex_ke);
         // eta
-        for (unsigned int j = 0; j < real_bath.size(); j++)
-            real_bath[j].update_eta(cpmdremote.timestep);
+        for (unsigned int j = 0; j < mesh_bath.size(); j++)
+            mesh_bath[j].update_eta(cpmdremote.timestep);
         // factor needed to update velocity
-        expfac_real = exp(-0.5 * cpmdremote.timestep * real_bath[0].xi);
+        expfac_real = exp(-0.5 * cpmdremote.timestep * mesh_bath[0].xi);
 
         // ### Velocity-Verlet Section ###
         // Propagate velocity (half time step):
         for (unsigned int i = 0; i < boundary.V.size(); i++)
-            boundary.V[i].update_real_velocity(cpmdremote.timestep, real_bath[0],
+            boundary.V[i].update_real_velocity(cpmdremote.timestep, mesh_bath[0],
                                                expfac_real);    // update particle velocity half time step
 
         // Propagate position (full time step):
@@ -129,52 +134,59 @@ void md_interface(INTERFACE &boundary, vector<PARTICLE> &counterions, vector<THE
 
         // Propagate velocity (second half time step):
         for (unsigned int i = 0; i < boundary.V.size(); i++)
-            boundary.V[i].update_real_velocity(cpmdremote.timestep, real_bath[0], expfac_real);
+            boundary.V[i].update_real_velocity(cpmdremote.timestep, mesh_bath[0], expfac_real);
 
         // RATTLE the system to enforce time-derivative of constraint (gradients update not required, positions unchanged):
         if (geomConstraint == 'V') RATTLE(boundary, constraintForm);
         else if (geomConstraint == 'A') RATTLE_for_area(boundary, constraintForm);
 
         // kinetic energies needed to set canonical ensemble
-        vertex_ke = vertex_kinetic_energy(boundary.V);
+        vertex_ke = compute_kinetic_energy(boundary.V);
+        ions_ke = compute_kinetic_energy(counterions);
 
         // Invoke the thermostat (forward Nose-Hoover chain):
         // xi
-        for (unsigned int j = 0; j < real_bath.size(); j++)
-            real_bath[j].update_eta(cpmdremote.timestep);
+        for (unsigned int j = 0; j < mesh_bath.size(); j++)
+            mesh_bath[j].update_eta(cpmdremote.timestep);
         // eta
-        for (unsigned int j = 0; j < real_bath.size(); j++)
-            update_chain_xi(j, real_bath, cpmdremote.timestep, vertex_ke);
+        for (unsigned int j = 0; j < mesh_bath.size(); j++)
+            update_chain_xi(j, mesh_bath, cpmdremote.timestep, vertex_ke);
 
         // ### Output file updates: ###
         // Output the series data at the specified interval:
         if (num % cpmdremote.writedata == 0 || num < 3) {
             // Compute & output the membrane-wide and global energies (energy_nanomembrane quantities):
 
-            boundary.compute_energy(num, scalefactor, bucklingFlag);
-            double real_bath_ke = bath_kinetic_energy(real_bath);
-            double real_bath_pe = bath_potential_energy(real_bath);
+            boundary.compute_energy(num, counterions, scalefactor, bucklingFlag);
+            double mesh_bath_ke = bath_kinetic_energy(mesh_bath);
+            double mesh_bath_pe = bath_potential_energy(mesh_bath);
             // Compute the global net energy to check for conservation:
-            double netEnergy = boundary.energy + real_bath_ke + real_bath_pe;
+            globalNetEnergy = boundary.energy + mesh_bath_ke + mesh_bath_pe;
 
             if (world.rank() == 0) {
-                list_energy << num << setw(15) << boundary.kenergy << setw(15) << boundary.penergy << setw(15)
-                            << boundary.energy << setw(15) << netEnergy << setw(15) << real_bath_ke
-                            << setw(15) << real_bath_pe << endl;
+                list_energy << num
+                            << setw(15) << boundary.netMeshKE + boundary.netIonKE // Net kinetic energy (mesh + ions)
+                << setw(15) << boundary.penergy // Net potential energy
+                << setw(15) << boundary.energy  // Local net energy (netMeshKE + netIonKE + penergy)
+                << setw(15) << globalNetEnergy // Global (conserved) net energy.
+                << setw(15) << real_bath_ke // Mesh bath KE
+                << setw(15) << real_bath_pe << endl; // Mesh bath PE
+
+
 
                 // Dump the energy drift and components explicitly (in file "net_Energy_Drift.dat"):
-                list_netEnergyDrift << num << "\t" << (netEnergy / initNetEnergy) << "\t" << netEnergy << "\t" << initNetEnergy << "\t" << abortCounter <<  endl;
+                list_netEnergyDrift << num << "\t" << (globalNetEnergy / initNetEnergy) << "\t" << globalNetEnergy << "\t" << initNetEnergy << "\t" << abortCounter << endl;
 
                 // Compute and output the face-based net area & volumes:
                 list_area << num << setw(15) << boundary.total_area << endl;
                 list_volume << num << setw(15) << boundary.total_volume << endl;
 
                 // Output the temperature (and optionally, thermostat parameters):
-                list_temperature << num << setw(15) << 2 * boundary.kenergy / (real_bath[0].dof * kB) << endl;
-                //list_variables << num << setw(15) << real_bath[0].xi << setw(15) << real_bath[0].eta << endl; // NOTE: commented out as not that important
+                list_temperature << num << setw(15) << 2 * boundary.netMeshKE / (mesh_bath[0].dof * kB) << endl;
+                //list_variables << num << setw(15) << mesh_bath[0].xi << setw(15) << mesh_bath[0].eta << endl; // NOTE: commented out as not that important
 
                 //  Abort the entire program if the global net energy has drifted upward by more than 5%:
-                if (1.05 < (netEnergy / initNetEnergy)) {
+                if (1.05 < (globalNetEnergy / initNetEnergy)) {
                     abortCounter++;
                     if (abortCounter == 10) {
                         cout << "Aborting due to excessive (>5%) net energy drift upwards." << endl;
@@ -182,7 +194,7 @@ void md_interface(INTERFACE &boundary, vector<PARTICLE> &counterions, vector<THE
                     }
                 }
                 //  Also abort if annealing hasn't yet begun, but the global energy has drifted downward by more than 5%:
-                else if ((num < cpmdremote.annealfreq) && ((netEnergy / initNetEnergy) < 0.95)) {
+                else if ((num < cpmdremote.annealfreq) && ((globalNetEnergy / initNetEnergy) < 0.95)) {
                     abortCounter++;
                     if (abortCounter == 10) {
                         cout << "Aborting due to excessive (>5%) net energy drift downwards prior to annealing." << endl;
@@ -228,10 +240,10 @@ void md_interface(INTERFACE &boundary, vector<PARTICLE> &counterions, vector<THE
                 VJ cautions against using gradual annealing, in which case just leave annealDuration = 1 in main. */
         if (cpmdremote.anneal == 'y' && num > cpmdremote.annealDuration &&
             ((num % cpmdremote.annealfreq == 0) || (num % cpmdremote.annealfreq < cpmdremote.annealDuration)) &&
-            real_bath[0].T >= 0.000000000000001) {
+            mesh_bath[0].T >= 0.000000000000001) {
             //  If annealing is commencing, update the annealing fractional decrements and print relevant information:
             if (cpmdremote.anneal == 'y' && num % cpmdremote.annealfreq == 0 &&
-                real_bath[0].T >= 0.000000000000001) { // Decide which fractional reduction for {T, Q} to use:
+                mesh_bath[0].T >= 0.000000000000001) { // Decide which fractional reduction for {T, Q} to use:
                 if (num == cpmdremote.annealfreq) // If in the first stage, decrement temperature by 1.25x.
                 {
                     cpmdremote.TAnnealFac = 1.25;
@@ -263,20 +275,20 @@ void md_interface(INTERFACE &boundary, vector<PARTICLE> &counterions, vector<THE
                     cout << "Beginning annealing for " << cpmdremote.annealDuration
                          << " steps decrementing by a factor of fT = " << fT << " and fQ = " << fQ << "." << endl;
             }
-            for (unsigned int b = 0; b < real_bath.size(); b++) {
-                real_bath[b].T = fT * real_bath[b].T;
-                real_bath[b].Q = fQ * real_bath[b].Q;
+            for (unsigned int b = 0; b < mesh_bath.size(); b++) {
+                mesh_bath[b].T = fT * mesh_bath[b].T;
+                mesh_bath[b].Q = fQ * mesh_bath[b].Q;
             }
         }
 
         // VJ's instantaneous annealing for constant decrement (fT, fQ):
-        /*    if (cpmdremote.anneal == 'y' && num % cpmdremote.annealfreq == 0 && real_bath[0].T >= 0.000000000000001)
+        /*    if (cpmdremote.anneal == 'y' && num % cpmdremote.annealfreq == 0 && mesh_bath[0].T >= 0.000000000000001)
         {
           cout << "annealing ... " << endl;
-          for (unsigned int b = 0; b < real_bath.size(); b++)
+          for (unsigned int b = 0; b < mesh_bath.size(); b++)
           {
-            real_bath[b].T = real_bath[b].T / 10;
-            real_bath[b].Q = real_bath[b].Q / 2;
+            mesh_bath[b].T = mesh_bath[b].T / 10;
+            mesh_bath[b].Q = mesh_bath[b].Q / 2;
           }
         }*/
 

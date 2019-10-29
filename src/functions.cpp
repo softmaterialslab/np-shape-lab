@@ -36,14 +36,14 @@ void initialize_vertex_velocities(vector<VERTEX> &V, vector<THERMOSTAT> &bath) {
     return;
 }
 
-// NB 2017.09.04:  initialize vertex velocities to zero
-void initialize_vertex_velocities_to_zero(vector<VERTEX> &V) {
+// NB 2017.09.04:  initialize vertex/mesh velocities to zero
+void initialize_velocities_to_zero(vector<VERTEX> &V, vector<PARTICLE> &counterions) {
     for (unsigned int i = 0; i < V.size(); i++) {
         V[i].velvec = VECTOR3D(0, 0, 0);
     }
-    //VECTOR3D average_velocity_vector = VECTOR3D(0, 0, 0);
-    //for (unsigned int i = 0; i < V.size(); i++)
-        //V[i].velvec = V[i].velvec - average_velocity_vector;
+    for (unsigned int i = 0; i < counterions.size(); i++) {
+        counterions[i].velvec = VECTOR3D(0, 0, 0);
+    }
 }
 
 // interface movie for VMD

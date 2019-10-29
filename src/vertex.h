@@ -44,7 +44,7 @@ private:
         ar & neg_GradVi;
         ar & neg_GradAi;
         ar & neg_GradConi;
-        ar & realke;
+        ar & ke;
         ar & r;
         ar & theta;
         ar & phi;
@@ -78,7 +78,7 @@ public:
     VECTOR3D neg_GradAi;      // NB added.
     VECTOR3D neg_GradConi;    // NB added.  Neg constraint gradient on vertex, differs from above if quadratic.
 
-    double realke;
+    double ke;
     double r, theta, phi;            //  Returns the polar coordinates of the vertex.
 
     void compute_area_normal();
@@ -107,9 +107,9 @@ public:
         return;
     }
 
-    // compute REAL kinetic energy
+    // compute kinetic energy
     void real_kinetic_energy() {
-        realke = 0.5 * m * (velvec * velvec);
+        ke = 0.5 * m * (velvec * velvec);
         return;
     }
 

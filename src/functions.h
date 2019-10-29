@@ -203,7 +203,7 @@ void interface_off(int num, INTERFACE &dsphere);
 void initialize_vertex_velocities(vector<VERTEX> &V, vector<THERMOSTAT> &bath);
 
 // initialize velocities of vertics to be zero
-void initialize_vertex_velocities_to_zero(vector<VERTEX> &V);
+void initialize_velocities_to_zero(vector<VERTEX> &V, vector<PARTICLE> &counterions);
 
 // ### Unused functions: ###
 

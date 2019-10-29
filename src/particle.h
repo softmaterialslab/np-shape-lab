@@ -85,9 +85,9 @@ public:
     }
 
     // calculate kinetic energy of a particle
-    void kinetic_energy()
+    void real_kinetic_energy()
     {
-        ke = 0.5 * m * velvec.GetMagnitude() * velvec.GetMagnitude();
+        ke = 0.5 * m * (velvec * velvec);
         return;
     }
 };

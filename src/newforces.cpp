@@ -63,8 +63,8 @@ void force_calculation_init(INTERFACE &boundary, const double scalefactor, char 
 void force_calculation(INTERFACE &boundary, const double scalefactor, char bucklingFlag) {
 
     //Common MPI Message objects
-    vector<VECTOR3D> forvec(sizFVec, VECTOR3D(0, 0, 0));
-    vector<VECTOR3D> forvecGather(boundary.V.size() + extraElements, VECTOR3D(0, 0, 0));
+    vector<VECTOR3D> forvec(sizFVecMesh, VECTOR3D(0, 0, 0));
+    vector<VECTOR3D> forvecGather(boundary.V.size(), VECTOR3D(0, 0, 0));
     unsigned int i=0, j=0;
     
 // ### Compute Forces ###
@@ -75,9 +75,9 @@ void force_calculation(INTERFACE &boundary, const double scalefactor, char buckl
 
     // Update vertex-vertex LJ & electrostatic forces:
     //i = 0; i < boundary.V.size(); i++
-    //i = lowerBound; i <= upperBound; i++
+    //i = lowerBoundMesh; i <= upperBoundMesh; i++
     #pragma omp parallel for schedule(dynamic) default(shared) private(i, j)
-    for (i = lowerBound; i <= upperBound; i++) {
+    for (i = lowerBoundMesh; i <= upperBoundMesh; i++) {
         for (j = 0;j < boundary.V.size(); j++) {
         //for (j = i + 1; j < boundary.V.size(); j++) {
             // These do not need re-initialized because they are being set each time.
@@ -102,7 +102,7 @@ void force_calculation(INTERFACE &boundary, const double scalefactor, char buckl
             esforce = ((-scalefactor * boundary.V[i].q * boundary.V[j].q / boundary.em) * (exp(-(1.0 / boundary.inv_kappa_out) * r)) ^
                         (r_vec ^ (1/r2)) ^ ((-1.0/r)-(1.0/boundary.inv_kappa_out)));
 
-            forvec[i-lowerBound] += ljforce + esforce;
+            forvec[i - lowerBoundMesh] += ljforce + esforce;
             //boundary.V[i].forvec += ljforce + esforce;
             //boundary.V[j].forvec -= ljforce + esforce;
         }
@@ -132,8 +132,8 @@ void force_calculation(INTERFACE &boundary, const double scalefactor, char buckl
     if (world.size() > 1) {
         all_gather(world, &forvec[0], forvec.size(), forvecGather);
     } else {
-        for (i = lowerBound; i <= upperBound; i++)
-            forvecGather[i] = forvec[i - lowerBound];
+        for (i = lowerBoundMesh; i <= upperBoundMesh; i++)
+            forvecGather[i] = forvec[i - lowerBoundMesh];
     }
 
     for (i = 0; i < boundary.V.size(); i++)
