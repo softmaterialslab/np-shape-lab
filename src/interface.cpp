@@ -515,46 +515,40 @@ void INTERFACE::output_configuration() {
 
 // %%% Counterion Setup Functionality: %%%
 
-void INTERFACE::put_counterions(double q_actual, double unit_radius_sphere, double box_radius, vector<PARTICLE> &counterions, int counterion_valency) {
+void INTERFACE::put_counterions(double q_actual, double unit_radius_sphere, double counterion_diameter, double box_radius, vector<PARTICLE> &counterions, int counterion_valency) {
 
 // % Populate the list of counterions:
 // Verify the requested valency counterions can actually enforce electroneutrality (within precision):
-assert(int(q_actual) % counterion_valency == 0);
+assert(int(round(q_actual)) % counterion_valency == 0);
 // Compute the total number needed for ideal integer valency:
-unsigned int total_counterions = int(abs(q_actual / counterion_valency));
-// Compute the diameter of the ions in consistent reduced units:
-double ion_diameter = 0.6; // Diameter in nanometers
-ion_diameter = ion_diameter / unit_radius_sphere;
+unsigned int total_counterions = round(abs(q_actual / counterion_valency));
 // NP-Counterion touching distance:
-double r0 = (1 + 0.5 * ion_diameter);
+double r0 = (1 + 0.5 * counterion_diameter);
 // Box-Counterion touching distance (spherical box):
-double r0_box = box_radius - 0.5 * ion_diameter;
+double r0_box = box_radius - 0.5 * counterion_diameter;
 
 UTILITY ugsl;
 
-// generate counterions in the box
+// Generate counterions in the box:
 while (counterions.size() != total_counterions) {
     double x = gsl_rng_uniform(ugsl.r);
     x = (1 - x) * (-r0_box) + x * (r0_box);
-    //x = x * r0_box;
     double y = gsl_rng_uniform(ugsl.r);
     y = (1 - y) * (-r0_box) + y * (r0_box);
-    //y = y * r0_box;
     double z = gsl_rng_uniform(ugsl.r);
     z = (1 - z) * (-r0_box) + z * (r0_box);
-    //z = z * r0_box;
     VECTOR3D posvec = VECTOR3D(x, y, z);
-    if (posvec.GetMagnitude() < r0 + ion_diameter) // Avoid placing counterions within the NP.
+    if (posvec.GetMagnitude() < r0 + counterion_diameter) // Avoid placing counterions within the NP.
         continue;
-    if (posvec.GetMagnitude() >= box_radius - ion_diameter) // Avoid placing counterions outside of the box.
+    if (posvec.GetMagnitude() >= box_radius - counterion_diameter) // Avoid placing counterions outside of the box.
         continue;
     bool continuewhile = false;
     for (unsigned int i = 0; i < counterions.size() && !continuewhile; i++)
-        if ((posvec - counterions[i].posvec).GetMagnitude() <= ion_diameter)
+        if ((posvec - counterions[i].posvec).GetMagnitude() <= counterion_diameter)
             continuewhile = true;        // Avoid overlapping with existing ions.
         if (continuewhile)
             continue;
-    counterions.push_back(PARTICLE(int(counterions.size()) + 1, ion_diameter, counterion_valency, counterion_valency * -1.0, 1.0, posvec));
+    counterions.push_back(PARTICLE(int(counterions.size()) + 1, counterion_diameter, counterion_valency, counterion_valency * -1.0, 1.0, posvec));
 }
 if (world.rank() == 0) {
 ofstream listcounterions("outfiles/counterions.xyz", ios::out);
@@ -567,6 +561,10 @@ listcounterions << "C" << setw(15) << counterions[i].posvec.x<< setw(15) << coun
 << counterions[i].posvec.GetMagnitude() << endl;
 listcounterions.close();
 }
+
+// Verify electroneutrality to within machine and type precision:
+assert(round(q_actual) == (counterion_valency * counterions.size()));
+
 return;
 }
 
@@ -597,11 +595,7 @@ void INTERFACE::compute_energy(int num, vector<PARTICLE> &counterions, const dou
     // Initiate the output stream:
     ofstream output("outfiles/energy_in_parts_kE_bE_sE_tE_ljE_esE.dat", ios::app);
     if (world.rank() == 0) {
-        output << num << " ";
-        output << totalKE << " ";
-        // NOTE: constraints are not explicit like below, so commented out the energies; also for teaching purpose
-        //  output << lambda_a * (total_area) << " ";
-        //  output <<  lambda_v * (total_volume - ref_volume) * (total_volume - ref_volume) << " ";
+        output << num << " " << totalKE << " ";
     }
     // Initialize, compute, & output the net bending energy (mesh-only):
     double benergy = 0;
@@ -660,7 +654,7 @@ void INTERFACE::compute_energy(int num, vector<PARTICLE> &counterions, const dou
     int i=0, j=0;
 
     // The mesh-mesh and mesh-ion components:
-#pragma omp parallel for schedule(dynamic) default(shared) private(i, j)
+    #pragma omp parallel for schedule(dynamic) default(shared) private(i, j)
     for (i = lowerBoundMesh; i <= upperBoundMesh; i++) {
         double mesh_mesh_net_LJ_temp = 0;
         double mesh_mesh_net_ES_temp = 0;
@@ -668,17 +662,17 @@ void INTERFACE::compute_energy(int num, vector<PARTICLE> &counterions, const dou
         double mesh_ions_net_ES_temp = 0;
         for (j = 0; j < V.size(); j++) {
             if (i == j) continue;
-            mesh_mesh_net_LJ_temp += energy_lj_pair(V[i].posvec, V[j].posvec, lj_length, elj);
+            mesh_mesh_net_LJ_temp += energy_lj_pair(V[i].posvec, V[j].posvec, lj_length_mesh_mesh, elj);
             mesh_mesh_net_ES_temp += energy_es_pair(V[i], V[j], em, inv_kappa_out, scalefactor);
         }
         mesh_mesh_net_LJ_temp = 0.5 * mesh_mesh_net_LJ_temp; // Cancel out double-counting in the mesh-mesh.
         mesh_mesh_net_ES_temp = 0.5 * mesh_mesh_net_ES_temp;
         for (j = 0; j < counterions.size(); j++) {
-            mesh_ions_net_LJ_temp += energy_lj_pair(V[i].posvec, counterions[j].posvec, lj_length, elj);
+            mesh_ions_net_LJ_temp += energy_lj_pair(V[i].posvec, counterions[j].posvec, lj_length_mesh_ions, elj);
             mesh_ions_net_ES_temp += energy_es_pair(V[i], counterions[j], em, inv_kappa_out, scalefactor);
         }
-        netMeshLJ[i - lowerBoundMesh] = mesh_mesh_net_LJ_temp; // No need to cancel double counting here.
-        netMeshES[i - lowerBoundMesh] = mesh_mesh_net_ES_temp;
+        netMeshLJ[i - lowerBoundMesh] = mesh_mesh_net_LJ_temp + mesh_ions_net_LJ_temp;
+        netMeshES[i - lowerBoundMesh] = mesh_mesh_net_ES_temp + mesh_ions_net_ES_temp;
     }
 
     for (i = lowerBoundMesh; i <= upperBoundMesh; i++) {
@@ -687,13 +681,13 @@ void INTERFACE::compute_energy(int num, vector<PARTICLE> &counterions, const dou
     }
 
     // The ion-ion component:
-#pragma omp parallel for schedule(dynamic) default(shared) private(i, j)
+    #pragma omp parallel for schedule(dynamic) default(shared) private(i, j)
     for (i = lowerBoundIons; i <= upperBoundIons; i++) {
         double ion_ion_net_LJ_temp = 0;
         double ion_ion_net_ES_temp = 0;
         for (j = 0; j < counterions.size(); j++) {
             if (i == j) continue;
-            ion_ion_net_LJ_temp += energy_lj_pair(counterions[i].posvec, counterions[j].posvec, lj_length, elj);
+            ion_ion_net_LJ_temp += energy_lj_pair(counterions[i].posvec, counterions[j].posvec, counterions[0].diameter, elj);
             ion_ion_net_ES_temp += energy_es_pair(counterions[i], counterions[j], em, inv_kappa_out, scalefactor);
         }
         netIonsLJ[i - lowerBoundIons] = 0.5 * ion_ion_net_LJ_temp ;

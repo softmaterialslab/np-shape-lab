@@ -52,7 +52,7 @@ private:
         ar & rest_volume;
         ar & avg_edge_length;
         ar & elj;
-        ar & lj_length;
+        ar & lj_length_mesh_mesh;
         ar & sconstant;
         ar & sigma_a;
     }
@@ -90,7 +90,8 @@ public:
 
     double avg_edge_length;
     double elj;            // strength of the lj potential
-    double lj_length;
+    double lj_length_mesh_mesh;
+    double lj_length_mesh_ions;
 
     // stretching energy parameters
     double sconstant;
@@ -127,7 +128,7 @@ public:
 
     void assign_external_q_values(double q_strength, string externalPattern);
 
-    void put_counterions(double q_actual, double unit_radius_sphere, double box_radius, vector<PARTICLE> &counterions, int counterion_valency);
+    void put_counterions(double q_actual, double unit_radius_sphere, double ion_diameter, double box_radius, vector<PARTICLE> &counterions, int counterion_valency);
 
     // ###  Energy computation operations: ###
     void compute_local_energies(const double scalefactor);  // Computes the local energetics profiles (creates local_*_E.off files).
