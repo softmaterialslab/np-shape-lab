@@ -99,9 +99,8 @@ int main(int argc, const char *argv[]) {
     // Counterion Initializations:
     double packing_fraction, box_radius;
     int counterion_valency;
+    double counterion_diameter = 0.6; // Counterion diameter in nanometers.
     vector<PARTICLE> counterions;
-
-    cout << counterions.size() << endl;
 
     // Control of the dynamics:
     CONTROL mdremote;
@@ -188,6 +187,8 @@ int main(int argc, const char *argv[]) {
     // Compute the box radius (where NP radius is unit length so it is not found here):
     if(counterionFlag != 'y') packing_fraction = 1.0;
     box_radius = pow(1 / packing_fraction,1.0/3.0);
+    // Reducing the counterion diameter:
+    counterion_diameter = (counterion_diameter / unit_radius_sphere);
 
     // Compute the 2D Young's Modulus (in kB*T/nm^2) from the reduced stretching constant specified as input:
     youngsModulus = boundary.sconstant / (unit_radius_sphere * unit_radius_sphere);  // For information purposes only.
@@ -218,7 +219,6 @@ int main(int argc, const char *argv[]) {
     lambda_v = 0;                        // hardwiring volume constraint. Unused.
     lambda_a = 0;                        // hardwiring area constraint. Unused.
     boundary.lambda_l = 0;            // forgot what was this?!  NB:  I think it's an edge line tension force. Unused.
-    boundary.lj_length = 0.1;         // Reduced LJ diameter associated with vertex; safety reasons, rare to come near as they repel.
 
     // Electrostatics setup (membrane, implicit salt ions):
     z_out = 1;                        // Valency of implicit (salt) ions.
@@ -249,7 +249,7 @@ int main(int argc, const char *argv[]) {
 
     // Populate the box with counterions, if requested:
     if(counterionFlag == 'y') {
-        boundary.put_counterions(q_actual, unit_radius_sphere, box_radius, counterions, counterion_valency);
+        boundary.put_counterions(q_actual, unit_radius_sphere, counterion_diameter, box_radius, counterions, counterion_valency);
         cout << "Counterions have been placed inside the box." << endl;
     }
 
@@ -259,8 +259,11 @@ int main(int argc, const char *argv[]) {
     boundary.ref_volume = boundary.total_volume;
     //boundary.ref_Area_Vertices = boundary.total_Area_Vertices;    // (2017.09.19 NB added.)  Initial area by vertices.
 
-    // LJ length
-    boundary.lj_length = boundary.lj_length * boundary.avg_edge_length;
+    // LJ parameters (mesh-mesh almost never invoked, present for security reasons):
+    double lj_length_mesh_mesh_coeff = 0.1;
+    boundary.lj_length_mesh_mesh = lj_length_mesh_mesh_coeff * boundary.avg_edge_length;
+    double meshPointRadius = 0.5 * boundary.avg_edge_length;
+    boundary.lj_length_mesh_ions = ((2.0 * meshPointRadius + counterion_diameter) / 2.0);
     boundary.elj = 1.0;
 
     // Thermostat for MD of the interface:
@@ -300,8 +303,7 @@ int main(int argc, const char *argv[]) {
         // ### Output to the console (or HPC *.out file) & backup "simulation.out" file) the simulation parameters: ###
 
         cout << "\n===================\nMembrane\n===================\n";
-        cout << "Unit radius of the sphere (in nm): " << unit_radius_sphere
-             << endl; //NB added in observing size change.
+        cout << "Unit radius of the sphere (in nm): " << unit_radius_sphere << endl;
         cout << "Number of vertices: " << boundary.V.size() << endl;
         cout << "Number of edges: " << boundary.E.size() << endl;
         cout << "Number of faces: " << boundary.F.size() << endl;
@@ -312,8 +314,7 @@ int main(int argc, const char *argv[]) {
              << "  Ref volume: " << boundary.ref_volume << endl;
         cout << "Total intial face area: " << boundary.total_area << "  Sphere area: " << 4 * pi << "  Ref area: "
              << boundary.ref_area << endl;
-        /*cout << "Total intial vertex area: " << boundary.total_Area_Vertices << "  Sphere area: " << 4 * pi
-             << "  Ref area: " << boundary.ref_Area_Vertices << endl;*/
+        cout << "Mesh point radius: " << meshPointRadius << endl;
         cout << "Bending rigidity: " << boundary.bkappa << endl;
         cout << "Young's Modulus (2D): " << youngsModulus << endl;
         cout << "Stretching constant: " << boundary.sconstant << endl;
@@ -322,7 +323,8 @@ int main(int argc, const char *argv[]) {
         cout << "Unstretched edge length: " << boundary.avg_edge_length
              << endl; // NB uncommented & replaced the output value.
         cout << "LJ strength: " << boundary.elj << endl;
-        cout << "LJ distance cutoff: " << boundary.lj_length << endl;
+        cout << "LJ mesh-mesh distance cutoff: " << boundary.lj_length_mesh_mesh << endl;
+        cout << "LJ mesh-ion distance cutoff: " << boundary.lj_length_mesh_ions << endl;
         cout << "Rigid geometric constraint: " << geomConstraint << endl;
 
         cout << "\n===================\nElectrostatics\n===================\n";
@@ -364,15 +366,14 @@ int main(int argc, const char *argv[]) {
                  << "  Ref volume: " << boundary.ref_volume << endl;
         list_out << "Total intial face area: " << boundary.total_area << "  Sphere area: " << 4 * pi << "  Ref area: "
                  << boundary.ref_area << endl;
-        /*list_out << "Total intial vertex area: " << boundary.total_Area_Vertices << "  Sphere area: " << 4 * pi
-                 << "  Ref area: " << boundary.ref_Area_Vertices << endl;*/
+        list_out << "Mesh point radius: " << meshPointRadius << endl;
         list_out << "Bending rigidity: " << boundary.bkappa << endl;
         list_out << "Young's Modulus (2D): " << youngsModulus << endl;
         list_out << "Stretching constant: " << boundary.sconstant << endl;
         list_out << "Surface Tension constant: " << (boundary.sigma_a / dynePerCm_Scalefactor) << endl;
         list_out << "Volume Tension constant: " << (boundary.sigma_v / atmPerNmThird_Scalefactor) << endl;
         list_out << "LJ strength: " << boundary.elj << endl;
-        list_out << "LJ distance cutoff: " << boundary.lj_length << endl;
+        list_out << "LJ distance cutoff: " << boundary.lj_length_mesh_mesh << endl;
         list_out << "Rigid geometric constraint: " << geomConstraint << endl;
 
         list_out << "\n===================\nElectrostatics\n===================\n";

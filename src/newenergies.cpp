@@ -6,7 +6,6 @@ double energy_lj_pair(VECTOR3D &pos1, VECTOR3D &pos2, double d, double elj)
   VECTOR3D r_vec = pos1 - pos2;
   double r2 = r_vec.GetMagnitudeSquared();
   double d2 = d * d;
-  
   if (r2 < dcut2 * d2)
   {
     double r6 = r2 * r2 * r2;

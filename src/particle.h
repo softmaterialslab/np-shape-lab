@@ -65,9 +65,8 @@ public:
     }
 
     // update position of the particle
-    void update_position(double dt)
-    {
-        posvec = ( posvec + (velvec ^ dt) );
+    void update_real_position(double dt) {
+        posvec = (posvec + (velvec ^ dt));
         return;
     }
 
@@ -78,9 +77,9 @@ public:
         return;
     }
 
-    void new_update_velocity(double dt, THERMOSTAT main_bath, long double expfac)
+    void update_real_velocity(double dt, THERMOSTAT ion_bath, long double expfac)
     {
-        velvec = ( ( velvec ^ (expfac)  ) + ( forvec ^ (0.5 * dt * sqrt(expfac)) ) );
+        velvec = ((velvec ^ (expfac)) + (forvec ^ (0.5 * dt * sqrt(expfac))));
         return;
     }
 
