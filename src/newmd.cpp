@@ -6,7 +6,7 @@
 #include "newforces.h"
 #include "newenergies.h"
 
-void md_interface(INTERFACE &boundary, vector<PARTICLE> &counterions, vector<THERMOSTAT> &mesh_bath, CONTROL &cpmdremote, char geomConstraint, char bucklingFlag,
+void md_interface(INTERFACE &boundary, vector<PARTICLE> &counterions, vector<THERMOSTAT> &mesh_bath, vector<THERMOSTAT> &ions_bath, CONTROL &cpmdremote, char geomConstraint, char bucklingFlag,
                   char constraintForm, const double scalefactor, double box_radius) {
 
     double percentage = 0, percentagePre = -1;
@@ -18,7 +18,7 @@ void md_interface(INTERFACE &boundary, vector<PARTICLE> &counterions, vector<THE
     // ### Calculate the intial net force on all vertices: ###
     force_calculation_init(boundary, counterions, scalefactor, bucklingFlag);
 
-    double expfac_real;
+    double expfac_mesh, expfac_ions; // Factors needed to update velocities for thermostatting.
 
     // Define output streams for data files:
     ofstream list_energy("outfiles/energy_nanomembrane.dat", ios::app);
@@ -49,24 +49,26 @@ void md_interface(INTERFACE &boundary, vector<PARTICLE> &counterions, vector<THE
         cout << endl << "No rigid geometric constraint will be enforced, soft constraints only." << endl << endl;
 
     // NB added to provide the initial quantities (pre-MD):
-    long double vertex_ke = compute_kinetic_energy(boundary.V);
-    long double ions_ke = compute_kinetic_energy(counterions);
+    long double vertex_ke = compute_kinetic_energy(boundary.V); // Store KE of vertices
+    long double ions_ke = compute_kinetic_energy(counterions); // Store KE of ions
     boundary.compute_energy(0, counterions, scalefactor, bucklingFlag);
-    double real_bath_ke = bath_kinetic_energy(mesh_bath);
-    double real_bath_pe = bath_potential_energy(mesh_bath);
+    double mesh_bath_ke = bath_kinetic_energy(mesh_bath);
+    double mesh_bath_pe = bath_potential_energy(mesh_bath);
+    double ions_bath_ke = bath_kinetic_energy(ions_bath);
+    double ions_bath_pe = bath_potential_energy(ions_bath);
     VECTOR3D total_momentum = VECTOR3D(0, 0, 0);
     for (unsigned int i = 0; i < boundary.V.size(); i++)
         total_momentum += boundary.V[i].velvec;
     double initNetEnergy = (boundary.energy + bath_kinetic_energy(mesh_bath) + bath_potential_energy(mesh_bath));
-    double globalNetEnergy = boundary.energy + real_bath_ke + real_bath_pe;
+    double globalNetEnergy = boundary.energy + mesh_bath_ke + mesh_bath_pe + ions_bath_ke + ions_bath_pe;
     if (world.rank() == 0) {
         list_energy << 0
         << setw(15) << boundary.netMeshKE + boundary.netIonKE // Net kinetic energy (mesh + ions)
-        << setw(15) << boundary.penergy // Net potential energy
-        << setw(15) << boundary.energy  // Local net energy (netMeshKE + netIonKE + penergy)
+        << setw(15) << boundary.penergy // Net potential energy (penergy of all)
+        << setw(15) << boundary.energy  // Local net energy (netMeshKE + netIonKE + penergy of all)
         << setw(15) << globalNetEnergy // Global (conserved) net energy.
-        << setw(15) << real_bath_ke // Mesh bath KE
-        << setw(15) << real_bath_pe << endl; // Mesh bath PE
+        << setw(15) << mesh_bath_ke + ions_bath_ke // Net bath KE
+        << setw(15) << mesh_bath_pe + ions_bath_pe << endl; // Net bath PE
 
         // Compute and output the face-based net area & volumes:
         list_area << 0 << setw(15) << boundary.total_area << endl;
@@ -96,18 +98,23 @@ void md_interface(INTERFACE &boundary, vector<PARTICLE> &counterions, vector<THE
         // xi
         for (int j = mesh_bath.size() - 1; j > -1; j--)
             update_chain_xi(j, mesh_bath, cpmdremote.timestep, vertex_ke);
+        for (int j = ions_bath.size() - 1; j > -1; j--)
+            update_chain_xi(j, ions_bath, cpmdremote.timestep, ions_ke);
         // eta
         for (unsigned int j = 0; j < mesh_bath.size(); j++)
             mesh_bath[j].update_eta(cpmdremote.timestep);
+        for (unsigned int j = 0; j < ions_bath.size(); j++)
+            ions_bath[j].update_eta(cpmdremote.timestep);
         // factor needed to update velocity
-        expfac_real = exp(-0.5 * cpmdremote.timestep * mesh_bath[0].xi);
+        expfac_mesh = exp(-0.5 * cpmdremote.timestep * mesh_bath[0].xi);
+        expfac_ions = exp(-0.5 * cpmdremote.timestep * ions_bath[0].xi);
 
         // ### Velocity-Verlet Section ###
         // Propagate velocity (half time step):
         for (unsigned int i = 0; i < boundary.V.size(); i++)
-            boundary.V[i].update_real_velocity(cpmdremote.timestep, mesh_bath[0], expfac_real);
+            boundary.V[i].update_real_velocity(cpmdremote.timestep, mesh_bath[0], expfac_mesh);
         for (unsigned int i = 0; i < counterions.size(); i++)
-            counterions[i].update_real_velocity(cpmdremote.timestep, mesh_bath[0],expfac_real);
+            counterions[i].update_real_velocity(cpmdremote.timestep, ions_bath[0], expfac_ions);
 
         // Propagate position (full time step):
         for (unsigned int i = 0; i < boundary.V.size(); i++)
@@ -137,9 +144,9 @@ void md_interface(INTERFACE &boundary, vector<PARTICLE> &counterions, vector<THE
 
         // Propagate velocity (second half time step):
         for (unsigned int i = 0; i < boundary.V.size(); i++)
-            boundary.V[i].update_real_velocity(cpmdremote.timestep, mesh_bath[0], expfac_real);
+            boundary.V[i].update_real_velocity(cpmdremote.timestep, mesh_bath[0], expfac_mesh);
         for (unsigned int i = 0; i < counterions.size(); i++)
-            counterions[i].update_real_velocity(cpmdremote.timestep, mesh_bath[0], expfac_real);
+            counterions[i].update_real_velocity(cpmdremote.timestep, mesh_bath[0], expfac_ions);
 
         // RATTLE the system to enforce time-derivative of constraint (gradients update not required, positions unchanged):
         if (geomConstraint == 'V') RATTLE(boundary, constraintForm);
@@ -153,9 +160,14 @@ void md_interface(INTERFACE &boundary, vector<PARTICLE> &counterions, vector<THE
         // xi
         for (unsigned int j = 0; j < mesh_bath.size(); j++)
             mesh_bath[j].update_eta(cpmdremote.timestep);
+        for (unsigned int j = 0; j < ions_bath.size(); j++)
+            ions_bath[j].update_eta(cpmdremote.timestep);
+
         // eta
         for (unsigned int j = 0; j < mesh_bath.size(); j++)
             update_chain_xi(j, mesh_bath, cpmdremote.timestep, vertex_ke);
+        for (unsigned int j = 0; j < ions_bath.size(); j++)
+            update_chain_xi(j, ions_bath, cpmdremote.timestep, ions_ke);
 
         // ### Output file updates: ###
         // Output the series data at the specified interval:
@@ -165,17 +177,19 @@ void md_interface(INTERFACE &boundary, vector<PARTICLE> &counterions, vector<THE
             boundary.compute_energy(num, counterions, scalefactor, bucklingFlag);
             double mesh_bath_ke = bath_kinetic_energy(mesh_bath);
             double mesh_bath_pe = bath_potential_energy(mesh_bath);
+            double ions_bath_ke = bath_kinetic_energy(ions_bath);
+            double ions_bath_pe = bath_potential_energy(ions_bath);
             // Compute the global net energy to check for conservation:
-            globalNetEnergy = boundary.energy + mesh_bath_ke + mesh_bath_pe;
+            globalNetEnergy = boundary.energy + mesh_bath_ke + mesh_bath_pe + ions_bath_ke + ions_bath_pe;
 
             if (world.rank() == 0) {
                 list_energy << num
                 << setw(15) << boundary.netMeshKE + boundary.netIonKE // Net kinetic energy (mesh + ions)
-                << setw(15) << boundary.penergy // Net potential energy
-                << setw(15) << boundary.energy  // Local net energy (netMeshKE + netIonKE + penergy)
+                << setw(15) << boundary.penergy // Net potential energy (of all)
+                << setw(15) << boundary.energy  // Local net energy (netMeshKE + netIonKE + penergy of all)
                 << setw(15) << globalNetEnergy // Global (conserved) net energy.
-                << setw(15) << real_bath_ke // Mesh bath KE
-                << setw(15) << real_bath_pe << endl; // Mesh bath PE
+                << setw(15) << mesh_bath_ke + ions_bath_ke // Mesh bath KE
+                << setw(15) << mesh_bath_pe + ions_bath_pe << endl; // Mesh bath PE
 
                 // Dump the energy drift and components explicitly (in file "net_Energy_Drift.dat"):
                 list_netEnergyDrift << num << "\t" << (globalNetEnergy / initNetEnergy) << "\t" << globalNetEnergy << "\t" << initNetEnergy << "\t" << abortCounter << endl;

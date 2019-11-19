@@ -470,6 +470,29 @@ void INTERFACE::assign_external_q_values(double q_strength, string externalPatte
             V[col1].q = (q_strength / total_area)*col2;
         }
     }
+
+    //  Scale the vertices' charges to achieve an integer charge (for if ions are present):
+    if (q_strength == 0){
+        for (unsigned int i = 0; i < V.size(); i++) {
+            V[i].q = 0;
+        }
+    }
+    else {
+        //  Assess total actual charge on the membrane (which may be less than the desired amount due to shuffling):
+        double q_actual = 0.;
+        for (unsigned int i = 0; i < V.size(); i++) {
+            q_actual += V[i].q;
+        }
+
+        //  Assess the target total charge, to scale charged vertices by to achieve it:
+        double q_target = round(q_actual);
+        // 'Ceil' necessary as number of charged patches is always >= number of uncharged patches by design above.
+
+        //  Scale the vertices' charges to achieve the target net charge exactly:
+        for (unsigned int i = 0; i < V.size(); i++) {
+            V[i].q = V[i].q * (q_target / q_actual);
+        }
+    }
 }
 
 //  Output information on the initial state of the NP mesh:
