@@ -58,8 +58,8 @@ Testing parameters: echo 3 4 100 35 0.0001 300 0.8 0 1 1
 
 using namespace boost::program_options;
 
-// Declaring function to initiate and propagate the MD (NB added char = constraint flag):
-void md_interface(INTERFACE &, vector<PARTICLE> &, vector<THERMOSTAT> &, CONTROL &, char, char, char, const double scalefactor, double box_radius);
+// Declaring function to initiate and propagate the MD:
+void md_interface(INTERFACE &, vector<PARTICLE> &, vector<THERMOSTAT> &, vector<THERMOSTAT> &, CONTROL &, char, char, char, const double scalefactor, double box_radius);
 
 //MPI boundary parameters
 unsigned int lowerBoundMesh;
@@ -83,8 +83,8 @@ int main(int argc, const char *argv[]) {
     // Declare variables to make the system:
     double ein = epsilon_water;        // permittivity of inside medium
     double eout = epsilon_water;        // permittivity of outside medium
-    double T, Q;                        // Temperature of the system, mass of thermostate (0 if inactive), timestep.
-    unsigned int chain_length_mesh;    // length of nose-hoover thermostat chain, 1 minimum, 1 means no thermostat
+    double T, Q_mesh, Q_ion;                        // Temperature of the system, mass of thermostate (0 if inactive), timestep.
+    unsigned int chain_length;    // length of nose-hoover thermostat chain, 1 minimum, 1 means no thermostat
 
     INTERFACE boundary;                    // interface (modelled as soft LJ wall)
     unsigned int disc1, disc2;
@@ -151,17 +151,19 @@ int main(int argc, const char *argv[]) {
              "Target initial temperature (prior to annealing).")
             ("disc2,D", value<unsigned int>(&disc2)->default_value(8),
              "Discretization parameter 2")
-            ("chain_length_mesh,C", value<unsigned int>(&chain_length_mesh)->default_value(5),
+            ("chain_length,C", value<unsigned int>(&chain_length)->default_value(5),
              "Number of thermostat particles in the Nose-Hoover chain (plus 1).")
-            ("thermostatMass,Q", value<double>(&Q)->default_value(.01),
-             "Mass of the thermostat (higher means less strongly coupled).")
+            ("meshThermostatMass,Q", value<double>(&Q_mesh)->default_value(.01),
+             "Mass of the mesh thermostat (higher means less strongly coupled).")
+            ("ionsThermostatMass,Y", value<double>(&Q_ion)->default_value(.01),
+             "Mass of the ions thermostat (higher means less strongly coupled).")
                  // Annealing Parameters:
             ("annealFlag,a", value<char>(&mdremote.anneal)->default_value('y'),
              "If annealing occurs or not ('y' for yes).")
             ("anneal_freq,f", value<int>(&mdremote.annealfreq)->default_value(50000),
              "Interval number of steps between which annealing commences.")
             ("anneal_dura,u", value<int>(&mdremote.annealDuration)->default_value(5000),
-             "Number of steps over which to reduce (T = fT*T) & (Q = fQ*Q), same as before if 1")
+             "Number of steps over which to reduce (T = fT*T) & (Q_mesh = fQ*Q_mesh), same as before if 1")
             ("anneal_Tfac,e", value<double>(&mdremote.TAnnealFac)->default_value(1.25),
              "Fold reduction to temperature at initial annealing call.  Was 10 before (and constant throughout)")
                  // Runtime & Output Parameters:
@@ -206,7 +208,8 @@ int main(int argc, const char *argv[]) {
 
     disc1 = 3;                                          //  Discretization parameters (h, k).
     alpha = 1.0;                                        //  Fractional charge occupancy.
-    if (chain_length_mesh == 1) Q = 0;                  //  Reduced mass of the thermostat particle(s)
+    if (chain_length == 1) Q_mesh = 0;                  //  Reduced mass of the thermostat particle(s)
+    if (chain_length == 1) Q_ion = 0;                   //  Reduced mass of the thermostat particle(s)
 
     mdremote.QAnnealFac =
             1.00 + (mdremote.TAnnealFac / 10.0);        // Maintain previous scaling, same as before (fQ = 2) if fT = 10.
@@ -267,21 +270,27 @@ int main(int argc, const char *argv[]) {
     boundary.elj = 1.0;
 
     // Thermostat for MD of the interface:
-    vector<THERMOSTAT> real_bath;        // thermostat for real system (interface + ions) ; no ions yet.
-    if (chain_length_mesh == 1)
-        real_bath.push_back(THERMOSTAT(0, T, 3 * boundary.V.size(), 0.0, 0, 0));
+    vector<THERMOSTAT> mesh_bath, ions_bath;        // thermostat for real system (interface + ions)
+    if (chain_length == 1) {
+        mesh_bath.push_back(THERMOSTAT(0, T, 3 * boundary.V.size(), 0.0, 0, 0));
+        ions_bath.push_back(THERMOSTAT(0, T, 3 * counterions.size(), 0.0, 0, 0));
+    }
     else {
-        real_bath.push_back(THERMOSTAT(Q, T, 3 * boundary.V.size(), 0, 0, 0));
-        while (real_bath.size() != chain_length_mesh - 1)
-            real_bath.push_back(THERMOSTAT(Q, T, 1, 0, 0, 0));
-        real_bath.push_back(THERMOSTAT(0, T, 3 * boundary.V.size(), 0.0, 0, 0));    // dummy bath (has 0 mass)
+        mesh_bath.push_back(THERMOSTAT(Q_mesh, T, 3 * boundary.V.size(), 0, 0, 0));
+        ions_bath.push_back(THERMOSTAT(Q_ion, T, 3 * counterions.size(), 0, 0, 0));
+        while (mesh_bath.size() != chain_length - 1)
+            mesh_bath.push_back(THERMOSTAT(Q_mesh, T, 1, 0, 0, 0));
+        while (ions_bath.size() != chain_length - 1)
+            ions_bath.push_back(THERMOSTAT(Q_ion, T, 1, 0, 0, 0));
+        mesh_bath.push_back(THERMOSTAT(0, T, 3 * boundary.V.size(), 0.0, 0, 0));    // dummy bath (has 0 mass)
+        ions_bath.push_back(THERMOSTAT(0, T, 3 * counterions.size(), 0.0, 0, 0));
     }
 
     // Assign masses to vertices
     for (unsigned int i = 0; i < boundary.V.size(); i++)
         boundary.V[i].m = 1.0;      // NB:  Energy conservation fails invariably if not = 1.0 .
 
-    // NB added following lines to load off-file (stops if the file is not found):
+    // NB added following lines to load off-file (stops if the file is not found; specify correctly):
     if (offFlag == 'y') boundary.load_configuration("380000.off");
 
     int numOfNodes = world.size();
@@ -341,8 +350,8 @@ int main(int argc, const char *argv[]) {
 
         cout << "\n===================\nThermodynamics\n===================\n";
         cout << "Initial Temperature (T): " << T << endl;
-        cout << "Thermostat mass (Q): " << real_bath[0].Q << endl;
-        cout << "Number of thermostats (C): " << real_bath.size() << endl;
+        cout << "Thermostat mass (Q_mesh): " << mesh_bath[0].Q << endl;
+        cout << "Number of thermostats (C): " << mesh_bath.size() << endl;
         cout << "Timestep (dt): " << mdremote.timestep << "  &  Total steps: " << mdremote.steps << "." << endl;
         cout << "Annealing: " << mdremote.anneal << endl;
         cout << "Anneal frequency: " << mdremote.annealfreq << endl;
@@ -390,8 +399,8 @@ int main(int argc, const char *argv[]) {
 
         list_out << "\n===================\nThermodynamics\n===================\n";
         list_out << "Initial Temperature (T): " << T << endl;
-        list_out << "Thermostat mass (Q): " << real_bath[0].Q << endl;
-        list_out << "Number of thermostats (C): " << real_bath.size() << endl;
+        list_out << "Thermostat mass (Q_mesh): " << mesh_bath[0].Q << endl;
+        list_out << "Number of thermostats (C): " << mesh_bath.size() << endl;
         list_out << "Timestep (dt): " << mdremote.timestep << "  &  Total steps: " << mdremote.steps << "." << endl;
         list_out << "Annealing: " << mdremote.anneal << endl;
         list_out << "Anneal frequency: " << mdremote.annealfreq << endl;
@@ -452,7 +461,7 @@ int main(int argc, const char *argv[]) {
         upperBoundIons = counterions.size() - 1; // With zero counterions, this is negative, preventing loop evaluation.
     }
 
-    md_interface(boundary, counterions, real_bath, mdremote, geomConstraint, bucklingFlag, constraintForm, scalefactor, box_radius);
+    md_interface(boundary, counterions, mesh_bath, ions_bath, mdremote, geomConstraint, bucklingFlag, constraintForm, scalefactor, box_radius);
     boundary.compute_local_energies(scalefactor);
     boundary.compute_local_energies_by_component();
 
