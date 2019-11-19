@@ -18,7 +18,7 @@ void md_interface(INTERFACE &boundary, vector<PARTICLE> &counterions, vector<THE
     // ### Calculate the intial net force on all vertices: ###
     force_calculation_init(boundary, counterions, scalefactor, bucklingFlag);
 
-    double expfac_mesh, expfac_ions;
+    double expfac_mesh, expfac_ions; // Factors needed to update velocities for thermostatting.
 
     // Define output streams for data files:
     ofstream list_energy("outfiles/energy_nanomembrane.dat", ios::app);
