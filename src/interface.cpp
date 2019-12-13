@@ -307,7 +307,7 @@ void INTERFACE::assign_random_q_values(double q_strength, double alpha, int num_
     for (unsigned int i = 0; i < number_of_vertices; i++)
         permutations.push_back(pair<double, int>(V[i].posvec.z, i));
     sort(permutations.begin(), permutations.end());
-    assert(num_divisions >= 1 && num_divisions <= 6); // Verify the prescribed number of divisions is supported.
+    assert(num_divisions >= 1 && num_divisions <= 17); // Verify the prescribed number of divisions is supported.
     if (number_of_vertices % num_divisions != 0)
         if (world.rank() == 0)
             cout << "Warning:  The number of vertices modulo the number of divisions is not zero; the closest approximation will be used." << endl;
