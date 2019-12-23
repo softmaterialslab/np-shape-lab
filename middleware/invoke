@@ -1,3 +1,4 @@
 #!/bin/sh
 
-/usr/bin/invoke_app "$@" -C start_jupyter -T @tool bin/npshapes.ipynb -u anaconda3-5.1
+/usr/bin/invoke_app "$@" -C "start_jupyter -t -T @tool bin/npshapes.ipynb" -t npshapeslab -u anaconda3-5.1
+
