@@ -2,6 +2,8 @@
 # This makes a parallel simulation for different dielectric problem
 # Use option -p in CC for profiling with gprof
 
+BIN = ../bin
+
 # nanoHUB flags. 
 nanoHUBCC = mpicxx -O3 -g -Wall -fopenmp -std=c++11 -Wunused-variable -Wunknown-pragmas
 nanoHUBLFLAG = -lgsl -lgslcblas -lm -L${BOOST_LIBDIR} -lboost_filesystem -lboost_system -lboost_program_options -lboost_mpi -lboost_serialization
@@ -25,12 +27,13 @@ OBJ = main.o newmd.o newforces.o newenergies.o interface.o functions.o vertex.o 
 
 all: $(PROG)
 
-install: all
-	@echo "compiling the np_electrostatics code in local computer"
-
-nanoHUB-install:
+install:
 	. /etc/environ.sh; use -e -r boost-1.62.0-mpich2-1.3-gnu-4.7.2; make CCF=nanoHUB all
 	@echo "compiling the np_electrostatics code on Nanohub"
+	cp -f $(PROG) $(BIN)
+
+local-install: all
+	@echo "compiling the np_electrostatics code in local computer"
 
 cluster-install:
 	module swap PrgEnv-cray PrgEnv-gnu && module load boost/1.65.0 && module load gsl; make CCF=BigRed2 all
