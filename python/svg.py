@@ -300,7 +300,7 @@ class svg:
                     scaleflag = 1
 
                 self.single(file, box, atoms, bonds, tris, lines, scaleflag)
-                print(time, end=' ')
+                #print(time, end=' ')
                 sys.stdout.flush()
                 i += 1
                 n += 1
@@ -349,11 +349,11 @@ class svg:
                     scaleflag = 1
 
                 self.single(file, box, atoms, bonds, tris, lines, scaleflag)
-                print(n, end=' ')
+                #print(n, end=' ')
                 sys.stdout.flush()
                 n += 1
 
-        print("\n%d images" % ncount)
+        #print("\n%d images" % ncount)
 
     # --------------------------------------------------------------------
 
