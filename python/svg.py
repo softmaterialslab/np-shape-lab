@@ -13,8 +13,8 @@ import re
 import subprocess
 import os
 import sys
-from python_src.vizinfo import vizinfo
-from python_src.vizinfo import colors
+from vizinfo import vizinfo
+from vizinfo import colors
 try:
     from StringIO import StringIO
 except ImportError:
