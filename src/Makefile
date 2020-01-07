@@ -53,3 +53,11 @@ else
 %.o : %.cpp
 	$(CC) -c $(CFLAG) $< -o $@	
 endif
+
+clean:
+        rm -f *.o
+        rm -f $(PROG)
+
+distclean: clean
+        rm -f $(BIN)/$(PROG)
+
