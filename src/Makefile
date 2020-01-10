@@ -55,9 +55,9 @@ else
 endif
 
 clean:
-        rm -f *.o
-        rm -f $(PROG)
+	rm -f *.o
+	rm -f $(PROG)
 
 distclean: clean
-        rm -f $(BIN)/$(PROG)
+	rm -f $(BIN)/$(PROG)
 
