@@ -1,0 +1,19 @@
+#! /bin/bash
+#PBS -l	nodes=4:ppn=16,walltime=3:00:00
+#PBS -q	gpu
+#PBS -m	ae
+#PBS -o	out.log
+#PBS -e	err.log
+#PBS -N	900_0.01_3_30_500
+
+# below are the modules you will need to compile the code on bigred2 (see README)
+# uncomment the following 3 lines to load the modules at the time of job launch
+module swap PrgEnv-cray PrgEnv-gnu
+module load boost/1.65.0
+module load gsl
+
+cd $PBS_O_WORKDIR
+
+export OMP_NUM_THREADS=16
+# -d refers to number of cores. this should match ppn in Line 2.
+time aprun -n 4 -d 16 ./np_shape_lab -q 900 -c 0.02 -t 3 -b 30 -s 30 -S 250000
