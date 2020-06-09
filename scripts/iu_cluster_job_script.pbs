@@ -4,7 +4,7 @@
 #SBATCH --time=0-1:00:00
 #SBATCH --partition=general
 #SBATCH --mail-type=FAIL,BEGIN,END
-#SBATCH --job-name=900_0.01_3_30_500
+#SBATCH --job-name=CHOOSE_JOB_NAME
 #SBATCH --output=out.log
 #SBATCH --error=err.log
 
@@ -17,5 +17,12 @@ module load gsl
 cd $SLURM_SUBMIT_DIR
 
 export OMP_NUM_THREADS=48
-# -d refers to number of cores. this should match ppn in Line 2.
-time srun -n 4 -d 48 ./np_shape_lab -q 900 -c 0.02 -t 3 -b 30 -s 30 -S 250000
+
+chmod 777 np_shape_lab
+
+# -d refers to number of cores. this should match ntasks-per-node
+time srun -n 4 -d 48 ./np_shape_lab -R 10 -q 600 -c 0.005 -t 1 -v 1 -b 40 -s 40 -S 25000 -D 4 -F n
+
+###params above: radius, charge, salt conc, surf tension, vol tension, bend mod, stretch mod, sim duration, discrete grid, randomness
+###if needed to email self, do #SBATCH--mail-user=youremail@iu.edu
+###if long wait in queue, do nodes=1, ntasks-per-node=24, time=22:00:00
