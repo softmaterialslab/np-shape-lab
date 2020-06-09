@@ -1,6 +1,6 @@
 # Nanoparticle Shape Lab
 
-## Install instructions on BigRed2
+## Install instructions on BigRed3
 * First, git clone the project:
 ```git clone https://github.com/softmaterialslab/np-shape-lab.git```
 * Then, load the required modules using following command:
