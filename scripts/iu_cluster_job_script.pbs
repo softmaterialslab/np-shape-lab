@@ -24,5 +24,6 @@ chmod 777 np_shape_lab
 time srun -n 1 -d 24 ./np_shape_lab -R 10 -q 600 -c 0.005 -t 1 -v 1 -b 40 -s 40 -S 25000 -D 4 -F n
 
 ###params above: radius, charge, salt conc, surf tension, vol tension, bend mod, stretch mod, sim duration, discrete grid, randomness
+###this should yield a disc like shape, see testing homogeneously-charged disc for exact numbers on area, energy to verify
 ###if needed to email self, do #SBATCH--mail-user=youremail@iu.edu
 ###for more time-consuming, final runs do nodes=4, ntasks-per-node=48, time=1:00:00 to accelerate simulations
