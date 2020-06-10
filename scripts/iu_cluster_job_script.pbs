@@ -1,6 +1,6 @@
 #!/bin/bash
-#SBATCH --nodes=4
-#SBATCH --ntasks-per-node=48
+#SBATCH --nodes=1
+#SBATCH --ntasks-per-node=24
 #SBATCH --time=0-1:00:00
 #SBATCH --partition=general
 #SBATCH --mail-type=FAIL,BEGIN,END
@@ -16,13 +16,13 @@ module load gsl
 ######  Job commands go below this line #####
 cd $SLURM_SUBMIT_DIR
 
-export OMP_NUM_THREADS=48
+export OMP_NUM_THREADS=24
 
 chmod 777 np_shape_lab
 
 # -d refers to number of cores. this should match ntasks-per-node
-time srun -n 4 -d 48 ./np_shape_lab -R 10 -q 600 -c 0.005 -t 1 -v 1 -b 40 -s 40 -S 25000 -D 4 -F n
+time srun -n 1 -d 24 ./np_shape_lab -R 10 -q 600 -c 0.005 -t 1 -v 1 -b 40 -s 40 -S 25000 -D 4 -F n
 
 ###params above: radius, charge, salt conc, surf tension, vol tension, bend mod, stretch mod, sim duration, discrete grid, randomness
 ###if needed to email self, do #SBATCH--mail-user=youremail@iu.edu
-###if long wait in queue, do nodes=1, ntasks-per-node=24, time=22:00:00
+###for more time-consuming, final runs do nodes=4, ntasks-per-node=48, time=1:00:00 to accelerate simulations
