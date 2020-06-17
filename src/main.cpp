@@ -93,7 +93,7 @@ int main(int argc, const char *argv[]) {
     double unit_radius_sphere, youngsModulus, q_strength, alpha, conc_out, z_out; // radius (in nm), net charge (if all charged), fractional q-occupancy, salt conc (MOLAR), salt valency
     int numPatches;
     double fracChargedPatch;
-    char randomFlag, offFlag, geomConstraint, bucklingFlag, constraintForm, counterionFlag;
+    char randomFlag, offFlag, geomConstraint, bucklingFlag, constraintForm, counterionFlag, functionFlag;
     string externalPattern;
 
     // Counterion Initializations:
@@ -126,6 +126,8 @@ int main(int argc, const char *argv[]) {
              "Reduced stretching modulus of the particle (kB*T/R0^2).")
             ("GeomConstraint,G", value<char>(&geomConstraint)->default_value('N'),
              "Specification of rigid geometric constraints, 'V' for volume.")
+            ("functionFlag,H", value<char>(&functionFlag)->default_value('n'),
+             "specification of function, 'y' for yinyang function.")
             ("bucklingFlag,B", value<char>(&bucklingFlag)->default_value('n'),
              "Specification of stretching form, if spontaneous buckling should occur.")
                  // Physical Parameters for patterned (Janus, Striped, Polyhedral) particles:
@@ -239,7 +241,7 @@ int main(int argc, const char *argv[]) {
     boundary.discretize(disc1, disc2);            // discretize the interface
     if (disc1 != 0 || disc2 != 0) {
         if (externalPattern == "None") 
-			  boundary.assign_random_q_values(q_strength, alpha, numPatches, fracChargedPatch, randomFlag);
+			  boundary.assign_random_q_values(q_strength, alpha, numPatches, fracChargedPatch, randomFlag, functionFlag);
         else 
 			  boundary.assign_external_q_values(q_strength, externalPattern);
 	 }
