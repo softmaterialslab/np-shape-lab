@@ -51,3 +51,5 @@
 ```time ./np_shape_lab -R 10 -q 0 -c 0.005 -t 0 -v 0 -b 1 -s 1000 -S 25000 -D 4 -F n -B y```
 * The added parameter is a buckling flag ("-B").
 * After a few (3 - 10) minutes, this should produce an icosahedron of final reduced area (A = 12.3795), local potential (U = 26.86 kB T), and conserved total energy (E = 127.69 kB T).
+
+###  Future: yin-yang patterns:
