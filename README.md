@@ -51,9 +51,3 @@
 ```time ./np_shape_lab -R 10 -q 0 -c 0.005 -t 0 -v 0 -b 1 -s 1000 -S 25000 -D 4 -F n -B y```
 * The added parameter is a buckling flag ("-B").
 * After a few (3 - 10) minutes, this should produce an icosahedron of final reduced area (A = 12.3795), local potential (U = 26.86 kB T), and conserved total energy (E = 127.69 kB T).
-
-###  Yin-yang Patterns:
-* The same parameters as in the Inhomogeneously-charged Hemisphere example, with one additional parameter (H):
-```time ./np_shape_lab -R 10 -q 600 -N 2 -p 0.5 -c 0.005 -t 1 -v 1 -b 40 -s 40 -S 25000 -D 4 -F n -H y```
-* The added parameter is a yinyang function flag ("-H").
-* After a few minutes, this should produce an yinyang-sphere of unchanged final reduced area (A = 12.5108), local potential (U = 1218.2 kB T), and conserved total energy (E = 1433.21 kB T).
