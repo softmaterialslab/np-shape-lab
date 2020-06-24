@@ -57,3 +57,5 @@
 ```time ./np_shape_lab -R 10 -q 600 -N 2 -p 0.5 -c 0.005 -t 1 -v 1 -b 40 -s 40 -S 25000 -D 4 -F n -H y```
 * The added parameter is a yinyang function flag ("-H").
 * After a few minutes, this should produce an yinyang-sphere of unchanged final reduced area (A = 12.5108), local potential (U = 1218.2 kB T), and conserved total energy (E = 1433.21 kB T).
+
+### Transition to understanding shape fluctuations real-time
