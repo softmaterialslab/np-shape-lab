@@ -342,9 +342,8 @@ void INTERFACE::assign_random_q_values(double q_strength, double alpha, int num_
 
     if (num_divisions == 1)              // one section: uniformly charged(default); cube formation if functionFlag = "c"
     {
-	unsigned int i;
 	if (functionFlag == 'c'){
-	    for (i=0; i < number_of_vertices; i++){
+	    for (unsigned int i = 0; i < number_of_vertices; i++){
 	      if((V[permutations[i].second].posvec.x * V[permutations[i].second].posvec.x + V[permutations[i].second].posvec.y * V[permutations[i].second].posvec.y <= 0.25) || (V[permutations[i].second].posvec.y * V[permutations[i].second].posvec.y + V[permutations[i].second].posvec.z * V[permutations[i].second].posvec.z <= 0.25) || (V[permutations[i].second].posvec.x * V[permutations[i].second].posvec.x + V[permutations[i].second].posvec.z * V[permutations[i].second].posvec.z <= 0.25)){
 		    V[permutations[i].second].q = q_strength * randomAreaList[i] / total_area;	
 	       }
@@ -354,7 +353,7 @@ void INTERFACE::assign_random_q_values(double q_strength, double alpha, int num_
 	    }
 	}
 	else {
-	    for (i = 0; i < number_of_vertices; i++)
+	    for (unsigned int i = 0; i < number_of_vertices; i++)
 		{
                      if (chargeStateList[i] == 1){
              		V[permutations[i].second].q = q_strength * randomAreaList[i] / total_area;}
