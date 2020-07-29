@@ -339,15 +339,30 @@ void INTERFACE::assign_random_q_values(double q_strength, double alpha, int num_
 
     unsigned int nVertPerPatch = (fracChargedPatch) * V.size();
 
-    if (num_divisions == 1)              // one section: uniformly charged
+
+    if (num_divisions == 1)              // one section: uniformly charged(default); cube formation if functionFlag = "c"
     {
-        for (unsigned int i = 0; i < number_of_vertices; i++)
-		  {
-            if (chargeStateList[i] == 1)
-                V[permutations[i].second].q = q_strength * randomAreaList[i] / total_area;
-            else
-                V[permutations[i].second].q = 0;
+	unsigned int i;
+	if (functionFlag == 'c'){
+	    for (i=0; i < number_of_vertices; i++){
+	      if((V[permutations[i].second].posvec.x * V[permutations[i].second].posvec.x + V[permutations[i].second].posvec.y * V[permutations[i].second].posvec.y <= 0.25) || (V[permutations[i].second].posvec.y * V[permutations[i].second].posvec.y + V[permutations[i].second].posvec.z * V[permutations[i].second].posvec.z <= 0.25) || (V[permutations[i].second].posvec.x * V[permutations[i].second].posvec.x + V[permutations[i].second].posvec.z * V[permutations[i].second].posvec.z <= 0.25)){
+		    V[permutations[i].second].q = q_strength * randomAreaList[i] / total_area;	
+	       }
+	       else{
+	           V[permutations[i].second].q = 0;
+	       }
+	    }
+	}
+	else {
+	    for (i = 0; i < number_of_vertices; i++)
+		{
+                     if (chargeStateList[i] == 1){
+             		V[permutations[i].second].q = q_strength * randomAreaList[i] / total_area;}
+                     else{
+               		V[permutations[i].second].q = 0;
 		  }
+	      }
+	}
     }
     if (num_divisions == 2) {           //  two patch Janus, specifiable fractional coverage
 		 unsigned int i;
@@ -357,11 +372,11 @@ void INTERFACE::assign_random_q_values(double q_strength, double alpha, int num_
             V[permutations[i].second].q = 0;
 	if (functionFlag == 'y'){
 		for (i = 0; i < number_of_vertices; i++) {
-		if (V[permutations[i].second].posvec.x < 0 && V[permutations[i].second].posvec.z > 0.5 * sin(M_PI * V[permutations[i].second].posvec.x)){
+		if (V[permutations[i].second].posvec.z <= 0 && (V[permutations[i].second].posvec.x-0.5) *( V[permutations[i].second].posvec.x-0.5)+V[permutations[i].second].posvec.z*V[permutations[i].second].posvec.z <= 0.25 ){
 			V[permutations[i].second].q = 0;
 
 		}
-		if (V[permutations[i].second].posvec.x > 0 && V[permutations[i].second].posvec.z < 0.5 * sin(M_PI * V[permutations[i].second].posvec.x)){
+		if (V[permutations[i].second].posvec.z >= 0 && (V[permutations[i].second].posvec.x+0.5) *( V[permutations[i].second].posvec.x+0.5)+V[permutations[i].second].posvec.z*V[permutations[i].second].posvec.z <= 0.25){
 			V[permutations[i].second].q = q_strength * randomAreaList[i] / total_area;
 		}
 	}
@@ -387,6 +402,7 @@ void INTERFACE::assign_random_q_values(double q_strength, double alpha, int num_
             V[permutations[i].second].q = q_strength * randomAreaList[i] / total_area;
         for (; i < number_of_vertices; i++)
             V[permutations[i].second].q = 0;
+
     }
     if (num_divisions == 5) {           //  n patch striped, approximately equal areas each about z-axis
 		 unsigned int i;
