@@ -380,6 +380,14 @@ void INTERFACE::assign_random_q_values(double q_strength, double alpha, int num_
 		}
 	}
 	}
+	//code for plus and minus
+	     //  for (i = 0; i < nVertPerPatch; i++)
+          //  V[permutations[i].second].q = q_strength * randomAreaList[i] / total_area;
+      // for (; i < (number_of_vertices - nVertPerPatch ); i++)
+             // V[permutations[i].second].q = 0;
+    //  for (; i < number_of_vertices; i++)
+         //   V[permutations[i].second].q = - q_strength * randomAreaList[i] / total_area;
+
 
     }
     if (num_divisions == 3) {           //  n patch striped, approximately equal areas each about z-axis
