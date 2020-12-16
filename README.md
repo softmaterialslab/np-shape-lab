@@ -1,6 +1,6 @@
 # Nanoparticle Shape Lab
 
-## Install instructions on BigRed2
+## Install instructions on BigRed3
 * First, git clone the project:
 ```git clone https://github.com/softmaterialslab/np-shape-lab.git```
 * Then, load the required modules using following command:
@@ -9,14 +9,12 @@
  ```cd np-shape-lab```
 * Then, install the project:
 ```make cluster-install```
-* Next, submit a test job:
-```make cluster-test-submit```
-* Then, clean the datafiles from the test job (this runs the disc control):
-```make dataclean```
 * Finally, submit the job:
 ```make cluster-submit```
 * All outputs from the simulation will be stored in the bin folder when the simulation is completed.
 * Check and compare files (ex: energy_nanomembrane.dat) inside the ```bin/outfiles``` directory.
+* Clean the datafiles if desired:
+```make dataclean```
 
 ## Install instructions on Local computer
 * Load the necessary modules:
@@ -53,3 +51,18 @@
 ```time ./np_shape_lab -R 10 -q 0 -c 0.005 -t 0 -v 0 -b 1 -s 1000 -S 25000 -D 4 -F n -B y```
 * The added parameter is a buckling flag ("-B").
 * After a few (3 - 10) minutes, this should produce an icosahedron of final reduced area (A = 12.3795), local potential (U = 26.86 kB T), and conserved total energy (E = 127.69 kB T).
+
+###  Yin-yang Patterns:
+* The same parameters as in the Inhomogeneously-charged Hemisphere example, with one additional parameter (H):
+```time ./np_shape_lab -R 10 -q 600 -N 2 -p 0.5 -c 0.005 -t 1 -v 1 -b 40 -s 40 -S 25000 -D 4 -F n -H y```
+* The added parameter is a function flag ("-H")£¬argument 'y' means yin-yang pattern.
+* After a few minutes, this should produce an yinyang-sphere of unchanged final reduced area (A = 12.5099), local potential (U = 1218.48 kB T), and conserved total energy (E = 1433.25 kB T).
+
+### Inhomogeneously-charged Cube Formation:
+* The same parameters as in the disc example, with one additional function parameter (H):
+```time ./np_shape_lab -R 10 -q 600 -c 0.005 -t 1 -v 1 -b 80 -s 40 -S 25000 -D 4 -F n -H c```
+* In function flag "-H", argument 'c' means cube formation. 
+* After a few minutes, this should produce a cube of unchanged final reduced area (A = 12.712), local potential (U = 2852.72 kB T), and conserved total energy (E = 3626.28 kB T).
+
+
+### Transition to understanding shape fluctuations real-time

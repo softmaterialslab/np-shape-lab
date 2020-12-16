@@ -7,6 +7,7 @@
 #include <algorithm>
 #include <list>
 #include <sstream>
+#include <cmath>
 
 void colormap(double x, double *r, double *g, double *b, double *a) {
     (*r) = 0;
@@ -302,7 +303,7 @@ void INTERFACE::assign_dual_boundary_edges() {
 }
 
 //  NB added function for pH (to distribute charge randomly); uniform for a = 1.0, equivalent to legacy but shuffled.
-void INTERFACE::assign_random_q_values(double q_strength, double alpha, int num_divisions, double fracChargedPatch, char randomFlag) {
+void INTERFACE::assign_random_q_values(double q_strength, double alpha, int num_divisions, double fracChargedPatch, char randomFlag, char functionFlag) {
     vector<pair<double, int> > permutations;
     for (unsigned int i = 0; i < number_of_vertices; i++)
         permutations.push_back(pair<double, int>(V[i].posvec.z, i));
@@ -338,15 +339,29 @@ void INTERFACE::assign_random_q_values(double q_strength, double alpha, int num_
 
     unsigned int nVertPerPatch = (fracChargedPatch) * V.size();
 
-    if (num_divisions == 1)              // one section: uniformly charged
+
+    if (num_divisions == 1)              // one section: uniformly charged(default); cube formation if functionFlag = "c"
     {
-        for (unsigned int i = 0; i < number_of_vertices; i++)
-		  {
-            if (chargeStateList[i] == 1)
-                V[permutations[i].second].q = q_strength * randomAreaList[i] / total_area;
-            else
-                V[permutations[i].second].q = 0;
+	if (functionFlag == 'c'){
+	    for (unsigned int i = 0; i < number_of_vertices; i++){
+	      if((V[permutations[i].second].posvec.x * V[permutations[i].second].posvec.x + V[permutations[i].second].posvec.y * V[permutations[i].second].posvec.y <= 0.25) || (V[permutations[i].second].posvec.y * V[permutations[i].second].posvec.y + V[permutations[i].second].posvec.z * V[permutations[i].second].posvec.z <= 0.25) || (V[permutations[i].second].posvec.x * V[permutations[i].second].posvec.x + V[permutations[i].second].posvec.z * V[permutations[i].second].posvec.z <= 0.25)){
+		    V[permutations[i].second].q = q_strength * randomAreaList[i] / total_area;	
+	       }
+	       else{
+	           V[permutations[i].second].q = 0;
+	       }
+	    }
+	}
+	else {
+	    for (unsigned int i = 0; i < number_of_vertices; i++)
+		{
+                     if (chargeStateList[i] == 1){
+             		V[permutations[i].second].q = q_strength * randomAreaList[i] / total_area;}
+                     else{
+               		V[permutations[i].second].q = 0;
 		  }
+	      }
+	}
     }
     if (num_divisions == 2) {           //  two patch Janus, specifiable fractional coverage
 		 unsigned int i;
@@ -354,6 +369,18 @@ void INTERFACE::assign_random_q_values(double q_strength, double alpha, int num_
             V[permutations[i].second].q = q_strength * randomAreaList[i] / total_area;
         for (; i < number_of_vertices; i++)
             V[permutations[i].second].q = 0;
+	if (functionFlag == 'y'){
+		for (i = 0; i < number_of_vertices; i++) {
+		if (V[permutations[i].second].posvec.z <= 0 && (V[permutations[i].second].posvec.x-0.5) *( V[permutations[i].second].posvec.x-0.5)+V[permutations[i].second].posvec.z*V[permutations[i].second].posvec.z <= 0.25 ){
+			V[permutations[i].second].q = 0;
+
+		}
+		if (V[permutations[i].second].posvec.z >= 0 && (V[permutations[i].second].posvec.x+0.5) *( V[permutations[i].second].posvec.x+0.5)+V[permutations[i].second].posvec.z*V[permutations[i].second].posvec.z <= 0.25){
+			V[permutations[i].second].q = q_strength * randomAreaList[i] / total_area;
+		}
+	}
+	}
+
     }
     if (num_divisions == 3) {           //  n patch striped, approximately equal areas each about z-axis
 		 unsigned int i;
@@ -374,6 +401,7 @@ void INTERFACE::assign_random_q_values(double q_strength, double alpha, int num_
             V[permutations[i].second].q = q_strength * randomAreaList[i] / total_area;
         for (; i < number_of_vertices; i++)
             V[permutations[i].second].q = 0;
+
     }
     if (num_divisions == 5) {           //  n patch striped, approximately equal areas each about z-axis
 		 unsigned int i;
