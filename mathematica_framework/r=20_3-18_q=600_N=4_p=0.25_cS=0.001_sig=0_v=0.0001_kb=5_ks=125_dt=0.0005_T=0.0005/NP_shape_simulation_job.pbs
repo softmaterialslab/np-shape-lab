@@ -1,0 +1,16 @@
+#!	/bin/bash
+#PBS	-l	nodes=4:ppn=16,walltime=17:00:00
+#PBS	-q	gpu
+#PBS	-m	ae
+#PBS	-o	out.log
+#PBS	-e	err.log
+#PBS	-N	600_4_0.25_0.001_0_5_125
+
+module	swap	PrgEnv-pgi/5.2.82	PrgEnv-gnu/5.2.82
+module	load	boost/1.65.0
+module	load	gsl/2.3
+
+cd	$PBS_O_WORKDIR
+chmod	777	np_shape_lab
+export OMP_NUM_THREADS=16
+time	aprun	-n	4	-d	16	./np_shape_lab	-R 20 -q 600 -N 4 -p 0.25 -c 0.001 -t 0 -v 0.0001 -b 5 -s 125 -B y -E None -S 250000 -f 50000 -u 5000 -d 0.0005 -T 0.0005 -D 18 -C 5 -F y

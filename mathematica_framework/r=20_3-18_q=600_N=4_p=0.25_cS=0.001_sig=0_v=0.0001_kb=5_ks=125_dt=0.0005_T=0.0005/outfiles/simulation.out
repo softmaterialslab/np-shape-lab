@@ -1,0 +1,50 @@
+===================
+Membrane
+===================
+Unit radius of the sphere (in nm): 20
+Number of vertices: 3872
+Number of edges: 11610
+Number of faces: 7740
+Lambda_v: 0
+Lambda_a: 0
+Lambda_l: 0
+Total intial volume: 4.18307  Sphere volume: 4.18879  Ref volume: 4.18307
+Total intial face area: 12.5575  Sphere area: 12.5664  Ref area: 12.5575
+Mesh point radius: 0.0305627
+Bending rigidity: 5
+Young's Modulus (2D): 0.3125
+Stretching constant: 125
+Surface Tension constant: 0
+Volume Tension constant: 0.0001
+LJ strength: 1
+LJ distance cutoff: 0.00611254
+Rigid geometric constraint: N
+
+===================
+Electrostatics
+===================
+Total charge on membrane: 600
+Final actual charge on membrane: 300
+Number of simulated counterions: 0
+Fractional charge occupancy (alpha): 1
+The number of patches is: 4
+The size of each patch is: 0.25
+The name of the external file used to specify charge patterning is: None
+Salt concentration: 0.001
+Debye length: 0.480899
+Bjerrum length: 0.0357
+
+===================
+Thermodynamics
+===================
+Initial Temperature (T): 0.0005
+Thermostat mass (Q_mesh): 0.01
+Number of thermostats (C): 5
+Timestep (dt): 0.0005  &  Total steps: 250000.
+Annealing: y
+Anneal frequency: 50000
+Anneal duration: 5000
+Temperature annealing decrement: 1.25
+Thermostat mass decrement: 1.125
+Randomness during run: y
+Off-file loaded: n
