@@ -204,7 +204,7 @@ void md_interface(INTERFACE &boundary, vector<PARTICLE> &counterions, vector<THE
 
                 //  Abort the entire program if the global net energy has drifted upward by more than 5%:
                 if (1.05 < (globalNetEnergy / initNetEnergy)) {
-                    abortCounter++;
+                    //abortCounter++;
                     if (abortCounter == 10) {
                         cout << "Aborting due to excessive (>5%) net energy drift upwards." << endl;
                         abort();

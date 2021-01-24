@@ -1,0 +1,87 @@
+# 3D simulation of ion condensation on nanomembrane/shell - nbrunk
+
+units lj
+boundary p p p
+atom_style hybrid charge sphere
+neighbor	0.3	bin
+neigh_modify	every	1	delay	0	check	yes
+neigh_modify	exclude	type	1	1
+neigh_modify	page	400000
+neigh_modify	one	40000
+
+## Create Simulation Box, Atoms ##
+read_data	initCoords.ShapeCondensation
+
+## Group Atoms by Type ##
+group mesh type	1
+group micro1 type	2
+group micro2 type	3
+
+## Defining Particle/Medium Properties ##
+mass	1	1	# mass of mesh points, immobile, irrelevant.
+mass	2	1	# reduced mass of counterions (Na)
+mass	3	1	# using same mass as (Na)
+dielectric	78.54
+
+## Ascribing Initial Velocities ##
+velocity	all	create	1.	4928459	rot	yes	dist	gaussian	units	box	# 1-kB*T,random seed,zero net ang.mom.,gauss from MB stats
+
+## Ascribing interparticle potentials: ##
+pair_style	lj/long/coul/long	cut	long	0.03367386144928119	5.395602646429833
+pair_coeff	1	1	1	0.03	0	# epsilon, sigma, lj_cut
+pair_coeff	1	2	1	0.03	0.03367386144928119
+pair_coeff	1	3	1	0.03	0.03367386144928119
+pair_coeff	2	2	1	0.03	0.03367386144928119
+pair_coeff	2	3	1	0.03	0.03367386144928119
+pair_coeff	3	3	1	0.03	0.03367386144928119
+pair_modify	shift	yes	# the additive e_LJ for repulsion-only
+
+kspace_style	pppm/disp	0.00001
+## Ensemble Fixes (+ for output) ##
+variable	myTStep	equal	0.00025
+timestep	${myTStep}
+variable	myDStep	equal	5000
+fix	myMicro1Fix	micro1	nvt	temp	1.	1.	0.025	# T_start, T_stop, T_damp=100*timestep
+fix	myMicro2Fix	micro2	nvt	temp	1.	1.	0.025	# T_start, T_stop, T_damp=100*timestep
+#fix	posAvg	all	ave/atom	500	51	50000	x	y	z	# N_every, N_repeat, N_freq = N_dump
+
+## Define Computes for Output ##
+compute	myMeshT	mesh	temp
+compute	myMicro1T	micro1	temp
+compute	myMicro2T	micro2	temp
+compute	meshPotVec	mesh	pe/atom
+compute	myMeshPot	mesh	reduce	sum	c_meshPotVec
+compute	mic1PotVec	micro1	pe/atom
+compute	myMicro1Pot	micro1	reduce	sum	c_mic1PotVec
+compute	mic2PotVec	micro2	pe/atom
+compute	myMicro2Pot	micro2	reduce	sum	c_mic2PotVec
+compute	atomPot 	all	pe/atom
+compute	atomKin 	all	ke/atom
+
+## Defining Output Information ##
+dump	posD	all	custom	${myDStep}	dump.melt	id	type	x	y	z	q	c_atomPot	c_atomKin
+dump	posDMicro1	micro1	custom	1000	dumpMicro1Only.melt	id	type	x	y	z	q	c_atomPot	c_atomKin
+dump	posDMicro2	micro2	custom	1000	dumpMicro2Only.melt	id	type	x	y	z	q	c_atomPot	c_atomKin
+#dump	posAvgD	all	custom	50000	dumpAvg.melt	id	type	f_posAvg[1]	f_posAvg[2]	f_posAvg[3]
+#dump	posInsD	all	custom	25000	dump.*	id	type	x	y	z
+
+thermo_style	custom	step	temp	c_myMeshT	c_myMicro1T	c_myMicro2T	c_myMeshPot	c_myMicro1Pot	c_myMicro2Pot	etotal	ke	pe	vol	press
+thermo	200
+
+restart	900000	assemblyRestart.*	# creates 10 restart files throughout run
+run	9000000
+
+unfix	myMicro1Fix
+unfix	myMicro2Fix
+uncompute	myMeshT
+uncompute	myMicro1T
+uncompute	myMicro2T
+uncompute	meshPotVec
+uncompute	myMeshPot
+uncompute	mic1PotVec
+uncompute	myMicro1Pot
+uncompute	mic2PotVec
+uncompute	myMicro2Pot
+uncompute	atomPot
+uncompute	atomKin
+undump	posD

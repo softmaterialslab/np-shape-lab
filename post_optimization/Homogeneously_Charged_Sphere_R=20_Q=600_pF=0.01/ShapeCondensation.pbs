@@ -1,0 +1,13 @@
+#!	/bin/bash
+#SBATCH--mail-user=nbrunk@iu.edu
+#SBATCH--nodes=1
+#SBATCH--ntasks-per-node=24
+#SBATCH--time=144:00:00
+#SBATCH--partition=general
+#SBATCH--mail-type=FAIL,BEGIN,END
+#SBATCH--job-name=ShCond_CounterOnly_pF=0.01
+#SBATCH--output=out.log
+#SBATCH--error=err.log
+
+cd	$SLURM_SUBMIT_DIR
+srun -n 24 lmp_mpi < ShapeCondensation.script
