@@ -259,11 +259,12 @@ void INTERFACE::discretize(unsigned int disc1, unsigned int disc2) {
 //Compute V's duals from initial input data file;
 void INTERFACE::assign_dual_initial() {
     for (unsigned int i = 0; i < number_of_faces; i++) {
-        V.push_back(VERTEX(VECTOR3D((F[i].itsV[0]->posvec.x + F[i].itsV[1]->posvec.x + F[i].itsV[2]->posvec.x) / 3.0,
+        Dual.push_back(VERTEX(VECTOR3D((F[i].itsV[0]->posvec.x + F[i].itsV[1]->posvec.x + F[i].itsV[2]->posvec.x) / 3.0,
             (F[i].itsV[0]->posvec.y + F[i].itsV[1]->posvec.y + F[i].itsV[2]->posvec.y) / 3.0,
             (F[i].itsV[0]->posvec.z + F[i].itsV[1]->posvec.z + F[i].itsV[2]->posvec.z) / 3.0)));
+        Dual[i].index = vcol1;
+        Dual[i].q = 0;
     }
-    number_of_vertices = number_of_vertices + number_of_faces;
 }
 
 

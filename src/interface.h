@@ -60,6 +60,8 @@ private:
 public:
 
     vector<VERTEX> V;
+    vector<VERTEX> Dual;
+
     vector<EDGE> E;
     vector<FACE> F;
     map<pair<VERTEX *, FACE *>, VECTOR3D> areaGradient;
