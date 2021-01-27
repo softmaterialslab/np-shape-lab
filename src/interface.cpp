@@ -933,7 +933,7 @@ listcounterions.close();
 }
 
 // Verify electroneutrality to within machine and type precision:
-assert(round(q_actual) == (counterion_valency * counterions.size()));
+assert(round(q_actual) == abs((counterion_valency * counterions.size())));
 
 return;
 }
