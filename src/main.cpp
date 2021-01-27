@@ -468,6 +468,7 @@ int main(int argc, const char *argv[]) {
     boundary.compute_local_energies_by_component();
 
     boundary.assign_dual_initial();
+    boundary.put_counterions(q_actual, unit_radius_sphere, counterion_diameter, box_radius, counterions, counterion_valency);
     create_input_coordinate(boundary.V, boundary.Dual, counterions, box_radius);
 
     return 0;

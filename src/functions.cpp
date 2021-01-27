@@ -119,8 +119,8 @@ void create_input_coordinate(vector<VERTEX>& V, vector<VERTEX>& Dual,vector<PART
                 << Dual[i].q << endl;
         }
         for (unsigned int i = 0; i < counterions.size(); i++) {
-            outdump << i + V.size() << "\t" << 2 << "\t" << counterions[i].posvec.x << "\t" << counterions[i].posvec.y
-                << "\t" << counterions[i].posvec.z << "\t" << counterions[i].q << "\t" << 0 << "\t" << 0 << endl;
+            outdump << i + V.size()+ Dual.size() << "\t" << 2 << "\t" << counterions[i].posvec.x << "\t" << counterions[i].posvec.y
+                << "\t" << counterions[i].posvec.z << "\t" << counterions[i].q  << endl;
         }
         outdump.close();
     }
