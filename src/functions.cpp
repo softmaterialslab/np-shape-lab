@@ -109,12 +109,12 @@ void create_input_coordinate(vector<VERTEX>& V, vector<VERTEX>& Dual,vector<PART
                 << "\t"
                 << V[i].q  << endl;
         }
-        for (unsigned int i = 0; i < V.size(); i++) {
+        for (unsigned int i = 0; i < Dual.size(); i++) {
             if (V[i].q > 0)
                 type = "1";
             else
                 type = "-1";
-            outdump << i << "\t" << type << "\t" << Dual[i].posvec.x << "\t" << Dual[i].posvec.y << "\t" << Dual[i].posvec.z
+            outdump << i+ V.size() << "\t" << type << "\t" << Dual[i].posvec.x << "\t" << Dual[i].posvec.y << "\t" << Dual[i].posvec.z
                 << "\t"
                 << Dual[i].q << endl;
         }
