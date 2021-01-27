@@ -110,7 +110,7 @@ void create_input_coordinate(vector<VERTEX>& V, vector<VERTEX>& Dual,vector<PART
                 << V[i].q  << endl;
         }
         for (unsigned int i = 0; i < Dual.size(); i++) {
-            if (V[i].q > 0)
+            if (Dual[i].q > 0)
                 type = "1";
             else
                 type = "-1";
