@@ -262,7 +262,7 @@ void INTERFACE::assign_dual_initial() {
         Dual.push_back(VERTEX(VECTOR3D((F[i].itsV[0]->posvec.x + F[i].itsV[1]->posvec.x + F[i].itsV[2]->posvec.x) / 3.0,
             (F[i].itsV[0]->posvec.y + F[i].itsV[1]->posvec.y + F[i].itsV[2]->posvec.y) / 3.0,
             (F[i].itsV[0]->posvec.z + F[i].itsV[1]->posvec.z + F[i].itsV[2]->posvec.z) / 3.0)));
-        Dual[i].index = vcol1;
+        Dual[i].index = i;
         Dual[i].q = 0;
     }
 }
