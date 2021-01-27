@@ -113,6 +113,8 @@ public:
 
     void assign_dual_boundary_edges();
 
+    void assign_dual_initial();
+
     void
     output_configuration();                                // Function to output information on the initial membrane.
     void assign_boundary_edges();                            // Not used.

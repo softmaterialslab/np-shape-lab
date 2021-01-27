@@ -467,6 +467,10 @@ int main(int argc, const char *argv[]) {
     boundary.compute_local_energies(scalefactor);
     boundary.compute_local_energies_by_component();
 
+    boundary.assign_dual_initial();
+    boundary.assign_random_q_values(q_strength, alpha, numPatches, fracChargedPatch, randomFlag, functionFlag);
+    create_input_coordinate(boundary.V, counterions, box_radius);
+
     return 0;
 }
 // End of main

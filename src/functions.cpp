@@ -83,6 +83,49 @@ void interface_movie(int num, vector<VERTEX> &V, vector<PARTICLE> &counterions, 
     return;
 }
 
+
+//input coordinate generated from orignal + dual meshes. 
+void create_input_coordinate(vector<VERTEX>& V, vector<PARTICLE>& counterions, double box_radius) {
+    if (world.rank() == 0) {
+        ofstream outdump("outfiles/initCoordi.lammps", ios::app);
+
+        outdump << setprecision(12);
+        outdump << std::fixed;
+
+        outdump << "ITEM: NUMBER OF ATOMS" << endl;
+        outdump << V.size() + counterions.size() << endl;
+        outdump << "ITEM: BOX BOUNDS" << endl;
+        outdump << -box_radius << "\t" << box_radius << "\t" << "xlo" << "\t" << "xhi" << endl;
+        outdump << -box_radius << "\t" << box_radius << "\t" << "ylo" << "\t" << "yhi" << endl;
+        outdump << -box_radius << "\t" << box_radius << "\t" << "zlo" << "\t" << "zhi" << endl;
+        outdump << "ITEM: ATOMS index type x y z Vq" << endl;
+        string type;
+        for (unsigned int i = 0; i < V.size(); i++) {
+            if (V[i].q > 0)
+                type = "1";
+            else
+                type = "-1";
+            outdump << i << "\t" << type << "\t" << V[i].posvec.x << "\t" << V[i].posvec.y << "\t" << V[i].posvec.z
+                << "\t"
+                << V[i].q  << endl;
+        }
+        for (unsigned int i = 0; i < counterions.size(); i++) {
+            outdump << i + V.size() << "\t" << 2 << "\t" << counterions[i].posvec.x << "\t" << counterions[i].posvec.y
+                << "\t" << counterions[i].posvec.z << "\t" << counterions[i].q << "\t" << 0 << "\t" << 0 << endl;
+        }
+        outdump.close();
+    }
+    return;
+}
+
+
+
+
+
+
+
+
+
 // interface movie off files
 void interface_off(int num, INTERFACE &dsphere) {
     stringstream ss;
