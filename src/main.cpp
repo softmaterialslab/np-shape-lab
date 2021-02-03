@@ -471,10 +471,13 @@ int main(int argc, const char *argv[]) {
 
     double box_radius_new = pow(((4.0 / 3.0) * 3.1415926 * unit_radius_sphere * unit_radius_sphere * unit_radius_sphere) / packing_fraction, 1.0 / 3.0) / (2.0 * unit_radius_sphere);
     double qLJ = charge_e / pow(4.0 * pi * epsilon_0 * KB_raw * 298.0 * unit_radius_sphere * pow(10.0, -9), 1.0 / 2.0);
-    
+    cout << "box radius: " << box_radius_new << endl;
+    cout << "qLJ: " << qLJ << endl;
     
     boundary.assign_dual_initial();
+    cout << "Finish assign dual " << endl;
     boundary.put_counterions(q_actual, unit_radius_sphere, counterion_diameter, box_radius_new, counterions, counterion_valency);
+    cout << "Finish put ions " << endl;
     create_input_coordinate(boundary.V, boundary.Dual, counterions, box_radius_new, qLJ);
 
     return 0;
