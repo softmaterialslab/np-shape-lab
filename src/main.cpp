@@ -469,13 +469,13 @@ int main(int argc, const char *argv[]) {
 
     //condensation input file generation
 
-    box_radius = pow(((4.0 / 3.0) * 3.1415926 * unit_radius_sphere * unit_radius_sphere * unit_radius_sphere) / packing_fraction, 1.0 / 3.0) / (2.0 * unit_radius_sphere);
+    double box_radius_new = pow(((4.0 / 3.0) * 3.1415926 * unit_radius_sphere * unit_radius_sphere * unit_radius_sphere) / packing_fraction, 1.0 / 3.0) / (2.0 * unit_radius_sphere);
     double qLJ = charge_e / pow(4.0 * pi * epsilon_0 * KB_raw * 298.0 * unit_radius_sphere * pow(10.0, -9), 1.0 / 2.0);
     
     
     boundary.assign_dual_initial();
-    boundary.put_counterions(q_actual, unit_radius_sphere, counterion_diameter, box_radius, counterions, counterion_valency);
-    create_input_coordinate(boundary.V, boundary.Dual, counterions, box_radius, qLJ);
+    boundary.put_counterions(q_actual, unit_radius_sphere, counterion_diameter, box_radius_new, counterions, counterion_valency);
+    create_input_coordinate(boundary.V, boundary.Dual, counterions, box_radius_new, qLJ);
 
     return 0;
 }
