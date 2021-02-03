@@ -85,42 +85,36 @@ void interface_movie(int num, vector<VERTEX> &V, vector<PARTICLE> &counterions, 
 
 
 //input coordinate generated from orignal + dual meshes. 
-void create_input_coordinate(vector<VERTEX>& V, vector<VERTEX>& Dual,vector<PARTICLE>& counterions, double box_radius) {
+void create_input_coordinate(vector<VERTEX>& V, vector<VERTEX>& Dual,vector<PARTICLE>& counterions, double box_radius, double qLJ) {
     if (world.rank() == 0) {
-        ofstream outdump("outfiles/initCoordi.out", ios::app);
+        ofstream outdump("outfiles/initCoordi.ShapeCondensation", ios::app);
 
         outdump << setprecision(12);
         outdump << std::fixed;
 
-        outdump << "ITEM: NUMBER OF ATOMS" << endl;
-        outdump << V.size() + Dual.size() +counterions.size() << endl;
-        outdump << "ITEM: BOX BOUNDS" << endl;
+        outdump << "LAMMPS data file" << endl;
+        outdump << V.size() + Dual.size() +counterions.size() << "\t" << "atoms" <<endl;
+        outdump << "3 atom types" << endl;
         outdump << -box_radius << "\t" << box_radius << "\t" << "xlo" << "\t" << "xhi" << endl;
         outdump << -box_radius << "\t" << box_radius << "\t" << "ylo" << "\t" << "yhi" << endl;
         outdump << -box_radius << "\t" << box_radius << "\t" << "zlo" << "\t" << "zhi" << endl;
-        outdump << "ITEM: ATOMS index type x y z Vq" << endl;
-        string type;
+        outdump << endl;
+        outdump << "Atoms" << endl;
+        outdump << endl;
+        //string type;
         for (unsigned int i = 0; i < V.size(); i++) {
-            if (V[i].q > 0)
-                type = "1";
-            else
-                type = "-1";
-            outdump << i << "\t" << type << "\t" << V[i].posvec.x << "\t" << V[i].posvec.y << "\t" << V[i].posvec.z
+            outdump << i << "\t" << 1 << "\t" << V[i].posvec.x << "\t" << V[i].posvec.y << "\t" << V[i].posvec.z
                 << "\t"
-                << V[i].q  << endl;
+                << V[i].q * qLJ  << endl;
         }
         for (unsigned int i = 0; i < Dual.size(); i++) {
-            if (Dual[i].q > 0)
-                type = "1";
-            else
-                type = "-1";
-            outdump << i+ V.size() << "\t" << type << "\t" << Dual[i].posvec.x << "\t" << Dual[i].posvec.y << "\t" << Dual[i].posvec.z
+            outdump << i+ V.size() << "\t" << 1 << "\t" << Dual[i].posvec.x << "\t" << Dual[i].posvec.y << "\t" << Dual[i].posvec.z
                 << "\t"
-                << Dual[i].q << endl;
+                << Dual[i].q * qLJ << endl;
         }
         for (unsigned int i = 0; i < counterions.size(); i++) {
             outdump << i + V.size()+ Dual.size() << "\t" << 2 << "\t" << counterions[i].posvec.x << "\t" << counterions[i].posvec.y
-                << "\t" << counterions[i].posvec.z << "\t" << counterions[i].q  << endl;
+                << "\t" << counterions[i].posvec.z << "\t" << counterions[i].q * qLJ << endl;
         }
         outdump.close();
     }

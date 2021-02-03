@@ -189,8 +189,8 @@ int main(int argc, const char *argv[]) {
     notify(vm);
 
     // Compute the box radius (where NP radius is unit length so it is not found here):
-    if(counterionFlag != 'y') packing_fraction = 1.0;
-    box_radius = pow(1 / packing_fraction,1.0/3.0);
+    //if(counterionFlag != 'y') packing_fraction = 1.0;
+    //box_radius = pow(1 / packing_fraction,1.0/3.0);
     // Reducing the counterion diameter:
     counterion_diameter = (counterion_diameter / unit_radius_sphere);
 
@@ -467,9 +467,15 @@ int main(int argc, const char *argv[]) {
     boundary.compute_local_energies(scalefactor);
     boundary.compute_local_energies_by_component();
 
+    //condensation input file generation
+
+    box_radius = pow(((4.0 / 3.0) * 3.1415926 * unit_radius_sphere * unit_radius_sphere * unit_radius_sphere) / packing_fraction, 1.0 / 3.0) / (2.0 * unit_radius_sphere);
+    double qLJ = charge_e / pow(4.0 * pi * epsilon_0 * KB_raw * 298.0 * unit_radius_sphere * pow(10.0, -9), 1.0 / 2.0);
+    
+    
     boundary.assign_dual_initial();
-    boundary.put_counterions(q_actual, unit_radius_sphere, counterion_diameter, 3*box_radius, counterions, counterion_valency);
-    create_input_coordinate(boundary.V, boundary.Dual, counterions, box_radius);
+    boundary.put_counterions(q_actual, unit_radius_sphere, counterion_diameter, box_radius, counterions, counterion_valency);
+    create_input_coordinate(boundary.V, boundary.Dual, counterions, box_radius, qLJ);
 
     return 0;
 }

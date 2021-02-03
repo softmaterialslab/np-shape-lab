@@ -893,7 +893,7 @@ assert(int(round(q_actual)) % counterion_valency == 0);
 // Compute the total number needed for ideal integer valency:
 unsigned int total_counterions = round(abs(q_actual / counterion_valency));
 // NP-Counterion touching distance:
-double r0 = (1 + 0.5 * counterion_diameter);
+double r0 = (1.5 + 0.5 * counterion_diameter);
 // Box-Counterion touching distance (spherical box):
 double r0_box = box_radius - 0.5 * counterion_diameter;
 
