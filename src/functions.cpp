@@ -103,18 +103,19 @@ void create_input_coordinate(vector<VERTEX>& V, vector<VERTEX>& Dual,vector<PART
         outdump << endl;
         //string type;
         for (unsigned int i = 0; i < V.size(); i++) {
-            outdump << i << "\t" << 1 << "\t" << V[i].posvec.x << "\t" << V[i].posvec.y << "\t" << V[i].posvec.z
+            outdump << i+1 << "\t" << 1 << "\t" << V[i].posvec.x << "\t" << V[i].posvec.y << "\t" << V[i].posvec.z
                 << "\t"
-                << V[i].q * qLJ  << endl;
+                << V[i].q * qLJ  << "\t" << 0.03 << "\t" << 8841.941282883074 << "\t" << endl;
         }
         for (unsigned int i = 0; i < Dual.size(); i++) {
-            outdump << i+ V.size() << "\t" << 1 << "\t" << Dual[i].posvec.x << "\t" << Dual[i].posvec.y << "\t" << Dual[i].posvec.z
+            outdump << i + 1 + V.size() << "\t" << 1 << "\t" << Dual[i].posvec.x << "\t" << Dual[i].posvec.y << "\t" << Dual[i].posvec.z
                 << "\t"
-                << Dual[i].q * qLJ << endl;
+                << Dual[i].q * qLJ << "\t" << 0.03 << "\t" << 8841.941282883074
+                << "\t" << endl;
         }
         for (unsigned int i = 0; i < counterions.size(); i++) {
-            outdump << i + V.size()+ Dual.size() << "\t" << 2 << "\t" << counterions[i].posvec.x << "\t" << counterions[i].posvec.y
-                << "\t" << counterions[i].posvec.z << "\t" << counterions[i].q * qLJ << endl;
+            outdump << i + 1 + V.size()+ Dual.size() << "\t" << 2 << "\t" << counterions[i].posvec.x << "\t" << counterions[i].posvec.y
+                << "\t" << counterions[i].posvec.z << "\t" << counterions[i].q * qLJ << "\t" << 0.03 << "\t" << 70735.53026306459 << "\t" << endl;
         }
         outdump.close();
     }
