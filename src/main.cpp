@@ -191,7 +191,7 @@ int main(int argc, const char *argv[]) {
     // Compute the box radius (where NP radius is unit length so it is not found here):
     //if(counterionFlag != 'y') packing_fraction = 1.0;
     //box_halflength = pow(1 / packing_fraction,1.0/3.0);
-    box_halflength = 1.0
+    box_halflength = 1.0;
     // Reducing the counterion diameter:
     counterion_diameter = (counterion_diameter / unit_radius_sphere);
 
