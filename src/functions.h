@@ -191,9 +191,9 @@ inline void update_chain_xi(unsigned int j, vector<THERMOSTAT> &bath, double dt,
 // ### New functions (as of ? prior to NB): ###
 
 // interface movie
-void interface_movie(int num, vector<VERTEX> &s, vector<PARTICLE> &counterions, double box_radius);
+void interface_movie(int num, vector<VERTEX> &s, vector<PARTICLE> &counterions, double box_halflength);
 
-void create_input_coordinate(vector<VERTEX> &s, vector<VERTEX>&p,vector<PARTICLE> &counterions, double box_radius, double qLJ);
+void create_input_coordinate(vector<VERTEX> &s, vector<VERTEX>&p,vector<PARTICLE> &counterions, double box_halflength, double qLJ);
 
 void interface_pov(int num, INTERFACE &dsphere);
 

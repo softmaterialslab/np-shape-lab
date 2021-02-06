@@ -47,7 +47,7 @@ void initialize_velocities_to_zero(vector<VERTEX> &V, vector<PARTICLE> &counteri
 }
 
 // interface movie for VMD
-void interface_movie(int num, vector<VERTEX> &V, vector<PARTICLE> &counterions, double box_radius) {
+void interface_movie(int num, vector<VERTEX> &V, vector<PARTICLE> &counterions, double box_halflength) {
     if (world.rank() == 0) {
         ofstream outdump("outfiles/p.lammpstrj", ios::app);
 
@@ -60,9 +60,9 @@ void interface_movie(int num, vector<VERTEX> &V, vector<PARTICLE> &counterions, 
         outdump << "ITEM: NUMBER OF ATOMS" << endl;
         outdump << V.size() + counterions.size() << endl;
         outdump << "ITEM: BOX BOUNDS" << endl;
-        outdump << -box_radius << "\t" << box_radius << endl;
-        outdump << -box_radius << "\t" << box_radius << endl;
-        outdump << -box_radius << "\t" << box_radius << endl;
+        outdump << -box_halflength << "\t" << box_halflength << endl;
+        outdump << -box_halflength << "\t" << box_halflength << endl;
+        outdump << -box_halflength << "\t" << box_halflength << endl;
         outdump << "ITEM: ATOMS index type x y z Vq Va Vq/a" << endl;
         string type;
         for (unsigned int i = 0; i < V.size(); i++) {
@@ -85,7 +85,7 @@ void interface_movie(int num, vector<VERTEX> &V, vector<PARTICLE> &counterions, 
 
 
 //input coordinate generated from orignal + dual meshes. 
-void create_input_coordinate(vector<VERTEX>& V, vector<VERTEX>& Dual,vector<PARTICLE>& counterions, double box_radius, double qLJ) {
+void create_input_coordinate(vector<VERTEX>& V, vector<VERTEX>& Dual,vector<PARTICLE>& counterions, double box_halflength, double qLJ) {
     if (world.rank() == 0) {
         ofstream outdump("outfiles/initCoordi.ShapeCondensation", ios::app);
 
@@ -95,9 +95,9 @@ void create_input_coordinate(vector<VERTEX>& V, vector<VERTEX>& Dual,vector<PART
         outdump << "LAMMPS data file" << endl;
         outdump << V.size() + Dual.size() +counterions.size() << "\t" << "atoms" <<endl;
         outdump << "3 atom types" << endl;
-        outdump << -box_radius << "\t" << box_radius << "\t" << "xlo" << "\t" << "xhi" << endl;
-        outdump << -box_radius << "\t" << box_radius << "\t" << "ylo" << "\t" << "yhi" << endl;
-        outdump << -box_radius << "\t" << box_radius << "\t" << "zlo" << "\t" << "zhi" << endl;
+        outdump << -box_halflength << "\t" << box_halflength << "\t" << "xlo" << "\t" << "xhi" << endl;
+        outdump << -box_halflength << "\t" << box_halflength << "\t" << "ylo" << "\t" << "yhi" << endl;
+        outdump << -box_halflength << "\t" << box_halflength << "\t" << "zlo" << "\t" << "zhi" << endl;
         outdump << endl;
         outdump << "Atoms" << endl;
         outdump << endl;

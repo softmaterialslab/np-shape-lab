@@ -117,8 +117,9 @@ public:
 
     void assign_dual_initial();
 
-    void
-    output_configuration();                                // Function to output information on the initial membrane.
+    void reassign_charges();
+
+    void output_configuration();                                // Function to output information on the initial membrane.
     void assign_boundary_edges();                            // Not used.
     void update_velocity_interface();                        // Not used.
     void update_position_interface();                        // Not used.
@@ -132,7 +133,7 @@ public:
 
     void assign_external_q_values(double q_strength, string externalPattern);
 
-    void put_counterions(double q_actual, double unit_radius_sphere, double ion_diameter, double box_radius, vector<PARTICLE> &counterions, int counterion_valency);
+    void put_counterions(double q_actual, double unit_radius_sphere, double ion_diameter, double box_halflength, vector<PARTICLE> &counterions, int counterion_valency);
 
     // ###  Energy computation operations: ###
     void compute_local_energies(const double scalefactor);  // Computes the local energetics profiles (creates local_*_E.off files).
