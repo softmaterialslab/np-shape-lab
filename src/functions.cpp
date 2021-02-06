@@ -85,7 +85,7 @@ void interface_movie(int num, vector<VERTEX> &V, vector<PARTICLE> &counterions, 
 
 
 //input coordinate generated from orignal + dual meshes. 
-void create_input_coordinate(vector<VERTEX>& V, vector<VERTEX>& Dual,vector<PARTICLE>& counterions, double box_halflength, double qLJ) {
+void create_input_coordinate(vector<VERTEX>& V, vector<VERTEX>& Dual,vector<PARTICLE>& counterions, double box_halflength, double qLJ, double diameter) {
     if (world.rank() == 0) {
         ofstream outdump("outfiles/initCoordi.ShapeCondensation", ios::app);
 
@@ -105,17 +105,17 @@ void create_input_coordinate(vector<VERTEX>& V, vector<VERTEX>& Dual,vector<PART
         for (unsigned int i = 0; i < V.size(); i++) {
             outdump << i+1 << "\t" << 1 << "\t" << V[i].posvec.x << "\t" << V[i].posvec.y << "\t" << V[i].posvec.z
                 << "\t"
-                << V[i].q * qLJ  << "\t" << 0.03 << "\t" << 8841.941282883074 << "\t" << endl;
+                << V[i].q * qLJ  << "\t" << diameter << "\t" << 1.0/((4.0/3.0)*pi* pow(diameter/2.0, 3)) << "\t" << endl;
         }
         for (unsigned int i = 0; i < Dual.size(); i++) {
             outdump << i + 1 + V.size() << "\t" << 1 << "\t" << Dual[i].posvec.x << "\t" << Dual[i].posvec.y << "\t" << Dual[i].posvec.z
                 << "\t"
-                << Dual[i].q * qLJ << "\t" << 0.03 << "\t" << 8841.941282883074
+                << Dual[i].q * qLJ << "\t" << diameter << "\t" << 1.0 / ((4.0 / 3.0) * pi * pow(diameter / 2.0, 3))
                 << "\t" << endl;
         }
         for (unsigned int i = 0; i < counterions.size(); i++) {
             outdump << i + 1 + V.size()+ Dual.size() << "\t" << 2 << "\t" << counterions[i].posvec.x << "\t" << counterions[i].posvec.y
-                << "\t" << counterions[i].posvec.z << "\t" << counterions[i].q * qLJ << "\t" << 0.03 << "\t" << 70735.53026306459 << "\t" << endl;
+                << "\t" << counterions[i].posvec.z << "\t" << counterions[i].q * qLJ << "\t" << diameter << "\t" << 1.0 / ((4.0 / 3.0) * pi * pow(diameter / 2.0, 3)) << "\t" << endl;
         }
         outdump.close();
     }

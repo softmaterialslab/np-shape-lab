@@ -193,7 +193,7 @@ inline void update_chain_xi(unsigned int j, vector<THERMOSTAT> &bath, double dt,
 // interface movie
 void interface_movie(int num, vector<VERTEX> &s, vector<PARTICLE> &counterions, double box_halflength);
 
-void create_input_coordinate(vector<VERTEX> &s, vector<VERTEX>&p,vector<PARTICLE> &counterions, double box_halflength, double qLJ);
+void create_input_coordinate(vector<VERTEX> &s, vector<VERTEX>&p,vector<PARTICLE> &counterions, double box_halflength, double qLJ, double diameter);
 
 void interface_pov(int num, INTERFACE &dsphere);
 
