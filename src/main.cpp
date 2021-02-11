@@ -59,7 +59,7 @@ Testing parameters: echo 3 4 100 35 0.0001 300 0.8 0 1 1
 using namespace boost::program_options;
 
 // Declaring function to initiate and propagate the MD:
-void md_interface(INTERFACE &, vector<PARTICLE> &, vector<THERMOSTAT> &, vector<THERMOSTAT> &, CONTROL &, char, char, char, const double scalefactor, double box_radius);
+void md_interface(INTERFACE &, vector<PARTICLE> &, vector<THERMOSTAT> &, vector<THERMOSTAT> &, CONTROL &, char, char, char, const double scalefactor, double box_halflength);
 
 //MPI boundary parameters
 unsigned int lowerBoundMesh;
@@ -97,7 +97,7 @@ int main(int argc, const char *argv[]) {
     string externalPattern;
 
     // Counterion Initializations:
-    double packing_fraction, box_radius;
+    double packing_fraction, box_halflength;
     int counterion_valency;
     double counterion_diameter = 0.6; // Counterion diameter in nanometers.
     vector<PARTICLE> counterions;
@@ -189,8 +189,9 @@ int main(int argc, const char *argv[]) {
     notify(vm);
 
     // Compute the box radius (where NP radius is unit length so it is not found here):
-    if(counterionFlag != 'y') packing_fraction = 1.0;
-    box_radius = pow(1 / packing_fraction,1.0/3.0);
+    //if(counterionFlag != 'y') packing_fraction = 1.0;
+    //box_halflength = pow(1 / packing_fraction,1.0/3.0);
+    box_halflength = 1.0;
     // Reducing the counterion diameter:
     counterion_diameter = (counterion_diameter / unit_radius_sphere);
 
@@ -254,7 +255,7 @@ int main(int argc, const char *argv[]) {
 
     // Populate the box with counterions, if requested:
     if(counterionFlag == 'y') {
-        boundary.put_counterions(q_actual, unit_radius_sphere, counterion_diameter, box_radius, counterions, counterion_valency);
+        boundary.put_counterions(q_actual, unit_radius_sphere, counterion_diameter, box_halflength, counterions, counterion_valency);
         cout << "Counterions have been placed inside the box." << endl;
     }
 
@@ -413,7 +414,7 @@ int main(int argc, const char *argv[]) {
         list_out << "Off-file loaded: " << offFlag << endl;
 
         // (NB added) Print the initial state in the movie file, prior to MD:
-        interface_movie(0, boundary.V, counterions, box_radius);  // NB added.  Note, calls this "time step -1" in movie file.
+        interface_movie(0, boundary.V, counterions, box_halflength);  // NB added.  Note, calls this "time step -1" in movie file.
 
     }
     // Initiate MD of the boundary/membrane:
@@ -463,9 +464,26 @@ int main(int argc, const char *argv[]) {
         upperBoundIons = counterions.size() - 1; // With zero counterions, this is negative, preventing loop evaluation.
     }
 
-    md_interface(boundary, counterions, mesh_bath, ions_bath, mdremote, geomConstraint, bucklingFlag, constraintForm, scalefactor, box_radius);
+    md_interface(boundary, counterions, mesh_bath, ions_bath, mdremote, geomConstraint, bucklingFlag, constraintForm, scalefactor, box_halflength);
     boundary.compute_local_energies(scalefactor);
     boundary.compute_local_energies_by_component();
+
+
+    //newly added by FS on 2021/2/5
+    //condensation input file generation
+
+    double box_halflength_new = pow(((4.0 / 3.0) * 3.1415926 * unit_radius_sphere * unit_radius_sphere * unit_radius_sphere) / packing_fraction, 1.0 / 3.0) / (2.0 * unit_radius_sphere);
+    double qLJ = charge_e / pow(4.0 * pi * epsilon_0 * KB_raw * room_temperature * unit_radius_sphere * pow(10.0, -9), 1.0 / 2.0);
+    cout << "box radius: " << box_halflength_new << endl;
+    cout << "qLJ: " << qLJ << endl;
+    
+    boundary.assign_dual_initial();
+    boundary.reassign_charges();
+    cout << "Finish assigning duals and recomputing all the charges" << endl;
+    boundary.put_counterions(q_actual, unit_radius_sphere, counterion_diameter, box_halflength_new, counterions, counterion_valency);
+    cout << "Finish putting ions" << endl;
+    create_input_coordinate(boundary.V, boundary.Dual, counterions, box_halflength_new, qLJ, 0.6/unit_radius_sphere);
+    cout << "Finish generating condensation input file " << endl;
 
     return 0;
 }

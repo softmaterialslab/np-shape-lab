@@ -47,7 +47,7 @@ void initialize_velocities_to_zero(vector<VERTEX> &V, vector<PARTICLE> &counteri
 }
 
 // interface movie for VMD
-void interface_movie(int num, vector<VERTEX> &V, vector<PARTICLE> &counterions, double box_radius) {
+void interface_movie(int num, vector<VERTEX> &V, vector<PARTICLE> &counterions, double box_halflength) {
     if (world.rank() == 0) {
         ofstream outdump("outfiles/p.lammpstrj", ios::app);
 
@@ -60,9 +60,9 @@ void interface_movie(int num, vector<VERTEX> &V, vector<PARTICLE> &counterions, 
         outdump << "ITEM: NUMBER OF ATOMS" << endl;
         outdump << V.size() + counterions.size() << endl;
         outdump << "ITEM: BOX BOUNDS" << endl;
-        outdump << -box_radius << "\t" << box_radius << endl;
-        outdump << -box_radius << "\t" << box_radius << endl;
-        outdump << -box_radius << "\t" << box_radius << endl;
+        outdump << -box_halflength << "\t" << box_halflength << endl;
+        outdump << -box_halflength << "\t" << box_halflength << endl;
+        outdump << -box_halflength << "\t" << box_halflength << endl;
         outdump << "ITEM: ATOMS index type x y z Vq Va Vq/a" << endl;
         string type;
         for (unsigned int i = 0; i < V.size(); i++) {
@@ -82,6 +82,53 @@ void interface_movie(int num, vector<VERTEX> &V, vector<PARTICLE> &counterions, 
     }
     return;
 }
+
+
+//input coordinate generated from orignal + dual meshes. 
+void create_input_coordinate(vector<VERTEX>& V, vector<VERTEX>& Dual,vector<PARTICLE>& counterions, double box_halflength, double qLJ, double diameter) {
+    if (world.rank() == 0) {
+        ofstream outdump("outfiles/initCoordi.ShapeCondensation", ios::app);
+
+        outdump << setprecision(12);
+        outdump << std::fixed;
+
+        outdump << "LAMMPS data file" << endl;
+        outdump << V.size() + Dual.size() +counterions.size() << "\t" << "atoms" <<endl;
+        outdump << "3 atom types" << endl;
+        outdump << -box_halflength << "\t" << box_halflength << "\t" << "xlo" << "\t" << "xhi" << endl;
+        outdump << -box_halflength << "\t" << box_halflength << "\t" << "ylo" << "\t" << "yhi" << endl;
+        outdump << -box_halflength << "\t" << box_halflength << "\t" << "zlo" << "\t" << "zhi" << endl;
+        outdump << endl;
+        outdump << "Atoms" << endl;
+        outdump << endl;
+        //string type;
+        for (unsigned int i = 0; i < V.size(); i++) {
+            outdump << i+1 << "\t" << 1 << "\t" << V[i].posvec.x << "\t" << V[i].posvec.y << "\t" << V[i].posvec.z
+                << "\t"
+                << V[i].q * qLJ  << "\t" << diameter << "\t" << 1.0/((4.0/3.0)*pi* pow(diameter/2.0, 3)) << "\t" << endl;
+        }
+        for (unsigned int i = 0; i < Dual.size(); i++) {
+            outdump << i + 1 + V.size() << "\t" << 1 << "\t" << Dual[i].posvec.x << "\t" << Dual[i].posvec.y << "\t" << Dual[i].posvec.z
+                << "\t"
+                << Dual[i].q * qLJ << "\t" << diameter << "\t" << 1.0 / ((4.0 / 3.0) * pi * pow(diameter / 2.0, 3))
+                << "\t" << endl;
+        }
+        for (unsigned int i = 0; i < counterions.size(); i++) {
+            outdump << i + 1 + V.size()+ Dual.size() << "\t" << 2 << "\t" << counterions[i].posvec.x << "\t" << counterions[i].posvec.y
+                << "\t" << counterions[i].posvec.z << "\t" << counterions[i].q * qLJ << "\t" << diameter << "\t" << 1.0 / ((4.0 / 3.0) * pi * pow(diameter / 2.0, 3)) << "\t" << endl;
+        }
+        outdump.close();
+    }
+    return;
+}
+
+
+
+
+
+
+
+
 
 // interface movie off files
 void interface_off(int num, INTERFACE &dsphere) {

@@ -38,6 +38,10 @@ const double dcut2 = 1.25992104989487316476;
 const double lB_water = 0.714;							// Bjerrum length in water, in nanometers
 const double epsilon_water = 80;						// Dielectric constant of water
 const double room_temperature = 298;						// Room temperature in Kelvin
+const double charge_e = 1.60217662 * pow(10.0, -19);         //charge constant in Coulombs
+const double epsilon_0 = 8.85 * pow(10.0, -12);          //Vacuum permittivity, in Farads/Meters
+const double KB_raw = 1.3806485279 * pow(10.0, -23);        //Boltzmann constant, in (kg*M^2)/(s^2*K)
+
 
 //const double unit_radius_sphere = 10;						// NB moved to specification in main.cpp and forwarded as arguments
 const double unitenergy = 1.3807 * pow(10.0,-16) * room_temperature;		// Unit of energy (thermal energy at room temperature in CGS)
