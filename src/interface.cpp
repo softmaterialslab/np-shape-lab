@@ -255,6 +255,39 @@ void INTERFACE::discretize(unsigned int disc1, unsigned int disc2) {
     return;
 }
 
+//FS added 2021/1/20
+//Compute V's duals from initial input data file;
+void INTERFACE::assign_dual_initial() {
+    for (unsigned int i = 0; i < number_of_faces; i++) {
+        Dual.push_back(VERTEX(VECTOR3D((F[i].itsV[0]->posvec.x + F[i].itsV[1]->posvec.x + F[i].itsV[2]->posvec.x) / 3.0,
+            (F[i].itsV[0]->posvec.y + F[i].itsV[1]->posvec.y + F[i].itsV[2]->posvec.y) / 3.0,
+            (F[i].itsV[0]->posvec.z + F[i].itsV[1]->posvec.z + F[i].itsV[2]->posvec.z) / 3.0)));
+        Dual[i].index = i;
+        Dual[i].q = (F[i].itsV[0]->q + F[i].itsV[1]->q + F[i].itsV[2]->q) / 3.0;
+    }
+}
+
+//reassign charges based on the ratio of total charges (q_original + q_dual) and previous charges q_original. 
+void INTERFACE::reassign_charges() {
+    double q_original = 0.0;
+    double q_dual = 0.0;
+    //Compute total charges (q_dual + q_orignal)
+    for (unsigned int i = 0; i < number_of_vertices; i++) {
+        q_original += V[i].q;
+    }
+    for (unsigned int i = 0; i < number_of_faces; i++) {
+        q_dual += Dual[i].q;
+    }
+
+    for (unsigned int i = 0; i < number_of_vertices; i++) {
+        V[i].q *= (q_original / (q_original + q_dual));
+    }
+    for (unsigned int i = 0; i < number_of_faces; i++) {
+        Dual[i].q *= (q_original / (q_original + q_dual));
+    }
+}
+
+
 //  Load off-file for restarting pre-existing simulations (only works if there was no edge-flipping, same connectivity):
 void INTERFACE::load_configuration(string filename) {
     ifstream in(filename.c_str(), ios::in);
@@ -380,6 +413,14 @@ void INTERFACE::assign_random_q_values(double q_strength, double alpha, int num_
 		}
 	}
 	}
+	//code for plus and minus
+	     //  for (i = 0; i < nVertPerPatch; i++)
+          //  V[permutations[i].second].q = q_strength * randomAreaList[i] / total_area;
+      // for (; i < (number_of_vertices - nVertPerPatch ); i++)
+             // V[permutations[i].second].q = 0;
+    //  for (; i < number_of_vertices; i++)
+         //   V[permutations[i].second].q = - q_strength * randomAreaList[i] / total_area;
+
 
     }
     if (num_divisions == 3) {           //  n patch striped, approximately equal areas each about z-axis
@@ -863,7 +904,7 @@ void INTERFACE::output_configuration() {
 
 // %%% Counterion Setup Functionality: %%%
 
-void INTERFACE::put_counterions(double q_actual, double unit_radius_sphere, double counterion_diameter, double box_radius, vector<PARTICLE> &counterions, int counterion_valency) {
+void INTERFACE::put_counterions(double q_actual, double unit_radius_sphere, double counterion_diameter, double box_halflength, vector<PARTICLE> &counterions, int counterion_valency) {
 
 // % Populate the list of counterions:
 // Verify the requested valency counterions can actually enforce electroneutrality (within precision):
@@ -871,9 +912,9 @@ assert(int(round(q_actual)) % counterion_valency == 0);
 // Compute the total number needed for ideal integer valency:
 unsigned int total_counterions = round(abs(q_actual / counterion_valency));
 // NP-Counterion touching distance:
-double r0 = (1 + 0.5 * counterion_diameter);
+double r0 = (2.5 + 0.5 * counterion_diameter);      //Assuming the biggest radius is based on the longest axis of the deformed shape which lambda = 2.5.
 // Box-Counterion touching distance (spherical box):
-double r0_box = box_radius - 0.5 * counterion_diameter;
+double r0_box = box_halflength - 0.5 * counterion_diameter;
 
 UTILITY ugsl;
 
@@ -888,7 +929,7 @@ while (counterions.size() != total_counterions) {
     VECTOR3D posvec = VECTOR3D(x, y, z);
     if (posvec.GetMagnitude() < r0 + counterion_diameter) // Avoid placing counterions within the NP.
         continue;
-    if (posvec.GetMagnitude() >= box_radius - counterion_diameter) // Avoid placing counterions outside of the box.
+    if (posvec.GetMagnitude() >= box_halflength - counterion_diameter) // Avoid placing counterions outside of the box.
         continue;
     bool continuewhile = false;
     for (unsigned int i = 0; i < counterions.size() && !continuewhile; i++)
