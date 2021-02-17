@@ -12,6 +12,8 @@ pip install svgwrite
 pip install pypng
 pip install pytest
 pip install matplotlib
+pip install ipywidgets
+jupyter nbextension enable --py widgetsnbextension
 
 export ENVIRON_CONFIG_DIRS=","
 pytest test || exit 1
