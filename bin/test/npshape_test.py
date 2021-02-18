@@ -16,7 +16,6 @@ def test_combine_4_PNGs(tb):
     func("test/resources/test.png", "test/resources/test.png", "test/resources/test.png", "test/resources/test.png", "test/resources/output.png")
     assert os.path.exists("test/resources/output.png") == 1
     os.remove("test/resources/output.png")
-    os.removedirs("snapshot_png")
 
 @testbook.testbook('npshape-frontend.ipynb', execute=True)
 def test_convert_SVG_PNG(tb):
@@ -32,5 +31,4 @@ def test_convert_SVG_PNG(tb):
     func("test/resources/test.svg", "test/resources/output.png")
     assert os.path.exists("test/resources/output.png") == 1
     os.remove("test/resources/output.png")
-    os.removedirs("snapshot_png")
 
