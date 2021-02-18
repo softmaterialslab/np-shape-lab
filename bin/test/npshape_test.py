@@ -9,7 +9,8 @@ def test_combine_4_PNGs(tb):
     w = png.Writer(256, 1, greyscale=True)
     w.write(f, [range(256)])
     f.close()
-    os.mkdir("snapshot_png")
+    if not os.path.exists('snapshot_png'):
+        os.mkdir("snapshot_png")
 
     func = tb.ref("combine_4_PNGs")
     func("test/resources/test.png", "test/resources/test.png", "test/resources/test.png", "test/resources/test.png", "test/resources/output.png")
@@ -25,7 +26,8 @@ def test_convert_SVG_PNG(tb):
     dwg.add(dwg.line((0, 0), (10, 0), stroke=svgwrite.rgb(10, 10, 16, '%')))
     dwg.add(dwg.text('Test', insert=(0, 0.2), fill='red'))
     dwg.save()
-    os.mkdir("snapshot_png")
+    if not os.path.exists('snapshot_png'):
+        os.mkdir("snapshot_png")
 
     func("test/resources/test.svg", "test/resources/output.png")
     assert os.path.exists("test/resources/output.png") == 1
