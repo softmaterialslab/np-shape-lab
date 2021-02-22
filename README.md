@@ -65,5 +65,6 @@
 * After a few minutes, this should produce a cube of unchanged final reduced area (A = 12.712), local potential (U = 2852.72 kB T), and conserved total energy (E = 3626.28 kB T).
 
 
-## NanoHUB app page:
-* https://nanohub.org/tools/npshapelab
+### more resources:
+* nanoHUB tool: https://nanohub.org/tools/npshapelab
+* workshop talk: https://www.youtube.com/watch?v=C4jvU6TuXao&list=PLnC9T36tFWrDnTt4yex5asWW624ceP9Jd&index=5
