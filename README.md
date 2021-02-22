@@ -55,7 +55,7 @@
 ###  Yin-yang Patterns:
 * The same parameters as in the Inhomogeneously-charged Hemisphere example, with one additional parameter (H):
 ```time ./np_shape_lab -R 10 -q 600 -N 2 -p 0.5 -c 0.005 -t 1 -v 1 -b 40 -s 40 -S 25000 -D 4 -F n -H y```
-* The added parameter is a function flag ("-H")£¬argument 'y' means yin-yang pattern.
+* The added parameter is a function flag ("-H")Â£Â¬argument 'y' means yin-yang pattern.
 * After a few minutes, this should produce an yinyang-sphere of unchanged final reduced area (A = 12.5099), local potential (U = 1218.48 kB T), and conserved total energy (E = 1433.25 kB T).
 
 ### Inhomogeneously-charged Cube Formation:
@@ -65,4 +65,5 @@
 * After a few minutes, this should produce a cube of unchanged final reduced area (A = 12.712), local potential (U = 2852.72 kB T), and conserved total energy (E = 3626.28 kB T).
 
 
-### Transition to understanding shape fluctuations real-time
+## NanoHUB app page:
+* https://nanohub.org/tools/npshapelab
