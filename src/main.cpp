@@ -255,7 +255,7 @@ int main(int argc, const char *argv[]) {
 
     // Populate the box with counterions, if requested:
     if(counterionFlag == 'y') {
-        boundary.put_counterions(q_actual, unit_radius_sphere, counterion_diameter, box_halflength, counterions, counterion_valency);
+        //boundary.put_counterions(q_actual, unit_radius_sphere, counterion_diameter, box_halflength, counterions, counterion_valency);
         cout << "Counterions have been placed inside the box." << endl;
     }
 
