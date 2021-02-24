@@ -68,8 +68,10 @@ void interface_movie(int num, vector<VERTEX> &V, vector<PARTICLE> &counterions, 
         for (unsigned int i = 0; i < V.size(); i++) {
             if (V[i].q > 0)
                 type = "1";
-            else
+            else if (V[i].q < 0)
                 type = "-1";
+            else
+                type = "0";
             outdump << i << "\t" << type << "\t" << V[i].posvec.x << "\t" << V[i].posvec.y << "\t" << V[i].posvec.z
                     << "\t"
                     << V[i].q << "\t" << V[i].itsarea << "\t" << (V[i].q / V[i].itsarea) << endl;

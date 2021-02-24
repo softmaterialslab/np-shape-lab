@@ -398,10 +398,10 @@ void INTERFACE::assign_random_q_values(double q_strength, double alpha, int num_
     }
     if (num_divisions == 2) {           //  two patch Janus, specifiable fractional coverage
 		 unsigned int i;
-        for (i = 0; i < nVertPerPatch; i++)
-            V[permutations[i].second].q = q_strength * randomAreaList[i] / total_area;
-        for (; i < number_of_vertices; i++)
-            V[permutations[i].second].q = 0;
+        //for (i = 0; i < nVertPerPatch; i++)
+        //    V[permutations[i].second].q = q_strength * randomAreaList[i] / total_area;
+        //for (; i < number_of_vertices; i++)
+        //    V[permutations[i].second].q = 0;
 	if (functionFlag == 'y'){
 		for (i = 0; i < number_of_vertices; i++) {
 		if (V[permutations[i].second].posvec.z <= 0 && (V[permutations[i].second].posvec.x-0.5) *( V[permutations[i].second].posvec.x-0.5)+V[permutations[i].second].posvec.z*V[permutations[i].second].posvec.z <= 0.25 ){
