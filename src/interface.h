@@ -133,7 +133,7 @@ public:
 
     void assign_external_q_values(double q_strength, string externalPattern);
 
-    void put_counterions(double q_actual, double unit_radius_sphere, double ion_diameter, double box_halflength, vector<PARTICLE> &counterions, int counterion_valency);
+    void put_counterions(double q_actual, double unit_radius_sphere, double ion_diameter, double box_halflength, vector<PARTICLE> &counterions, int counterion_valency, bool counterion_flag);
 
     // ###  Energy computation operations: ###
     void compute_local_energies(const double scalefactor);  // Computes the local energetics profiles (creates local_*_E.off files).

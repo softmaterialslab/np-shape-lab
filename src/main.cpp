@@ -477,10 +477,12 @@ int main(int argc, const char *argv[]) {
     cout << "box radius: " << box_halflength_new << endl;
     cout << "qLJ: " << qLJ << endl;
     
+    double counterion_flag = true;
+
     boundary.assign_dual_initial();
     boundary.reassign_charges();
     cout << "Finish assigning duals and recomputing all the charges" << endl;
-    boundary.put_counterions(q_actual, unit_radius_sphere, counterion_diameter, box_halflength_new, counterions, counterion_valency);
+    boundary.put_counterions(q_actual, unit_radius_sphere, counterion_diameter, box_halflength_new, counterions, counterion_valency, counterion_flag);
     cout << "Finish putting ions" << endl;
     create_input_coordinate(boundary.V, boundary.Dual, counterions, box_halflength_new, qLJ, 0.6/unit_radius_sphere);
     cout << "Finish generating condensation input file " << endl;

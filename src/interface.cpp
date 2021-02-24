@@ -904,7 +904,7 @@ void INTERFACE::output_configuration() {
 
 // %%% Counterion Setup Functionality: %%%
 
-void INTERFACE::put_counterions(double q_actual, double unit_radius_sphere, double counterion_diameter, double box_halflength, vector<PARTICLE> &counterions, int counterion_valency) {
+void INTERFACE::put_counterions(double q_actual, double unit_radius_sphere, double counterion_diameter, double box_halflength, vector<PARTICLE> &counterions, int counterion_valency, bool counterion_flag) {
 
 // % Populate the list of counterions:
 // Verify the requested valency counterions can actually enforce electroneutrality (within precision):
@@ -915,6 +915,7 @@ unsigned int total_counterions = round(abs(q_actual / counterion_valency));
 double r0 = (2.5 + 0.5 * counterion_diameter);      //Assuming the biggest radius is based on the longest axis of the deformed shape which lambda = 2.5.
 // Box-Counterion touching distance (spherical box):
 double r0_box = box_halflength - 0.5 * counterion_diameter;
+double counterion_count = 0.0;
 
 UTILITY ugsl;
 
@@ -937,7 +938,18 @@ while (counterions.size() != total_counterions) {
             continuewhile = true;        // Avoid overlapping with existing ions.
         if (continuewhile)
             continue;
-    counterions.push_back(PARTICLE(int(counterions.size()) + 1, counterion_diameter, counterion_valency, counterion_valency * -1.0, 1.0, posvec));
+    if (counterion_flag){
+        if (counterion_count < (total_counterions / 2.0)) {
+            counterions.push_back(PARTICLE(int(counterions.size()) + 1, counterion_diameter, counterion_valency, counterion_valency * -1.0, 1.0, posvec));
+            counterion_count += 1.0;
+        }
+        else {
+            counterions.push_back(PARTICLE(int(counterions.size()) + 1, counterion_diameter, counterion_valency, counterion_valency * 1.0, 1.0, posvec));
+        }
+    }
+    else {
+        counterions.push_back(PARTICLE(int(counterions.size()) + 1, counterion_diameter, counterion_valency, counterion_valency * -1.0, 1.0, posvec));
+    }
 }
 if (world.rank() == 0) {
 ofstream listcounterions("outfiles/counterions.xyz", ios::out);
@@ -952,7 +964,9 @@ listcounterions.close();
 }
 
 // Verify electroneutrality to within machine and type precision:
-assert(round(q_actual) == (counterion_valency * counterions.size()));
+if (!counterion_flag) {
+    assert(round(q_actual) == (counterion_valency * counterions.size()));
+}
 
 return;
 }
