@@ -114,7 +114,15 @@ void create_input_coordinate(vector<VERTEX>& V, vector<VERTEX>& Dual,vector<PART
                 << "\t" << endl;
         }
         for (unsigned int i = 0; i < counterions.size(); i++) {
-            outdump << i + 1 + V.size()+ Dual.size() << "\t" << 2 << "\t" << counterions[i].posvec.x << "\t" << counterions[i].posvec.y
+            string type;
+            if (counterions[i].q > 0) {
+                type = "2";
+            }
+            else {
+                type = "3";
+            }
+
+            outdump << i + 1 + V.size()+ Dual.size() << "\t" << type << "\t" << counterions[i].posvec.x << "\t" << counterions[i].posvec.y
                 << "\t" << counterions[i].posvec.z << "\t" << counterions[i].q * qLJ << "\t" << diameter << "\t" << 1.0 / ((4.0 / 3.0) * pi * pow(diameter / 2.0, 3)) << "\t" << endl;
         }
         outdump.close();
