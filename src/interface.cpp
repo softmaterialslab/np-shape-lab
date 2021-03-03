@@ -264,6 +264,8 @@ void INTERFACE::assign_dual_initial() {
             (F[i].itsV[0]->posvec.z + F[i].itsV[1]->posvec.z + F[i].itsV[2]->posvec.z) / 3.0)));
         Dual[i].index = i;
         Dual[i].q = (F[i].itsV[0]->q + F[i].itsV[1]->q + F[i].itsV[2]->q) / 3.0;
+        if (Dual[i].q != 0)
+            Dual[i].q = 0.12 * (F[i].itsV[0]->itsarea + F[i].itsV[1]->itsarea + F[i].itsV[2]->itsarea) / 3.0;
     }
 }
 
@@ -415,11 +417,11 @@ void INTERFACE::assign_random_q_values(double q_strength, double alpha, int num_
 	}
 	//code for plus and minus
 	    for (i = 0; i < nVertPerPatch; i++)
-            V[permutations[i].second].q = q_strength * randomAreaList[i] / total_area;
+            V[permutations[i].second].q = 0.12 * randomAreaList[i];
         for (; i < (number_of_vertices - nVertPerPatch ); i++)
             V[permutations[i].second].q = 0;
         for (; i < number_of_vertices; i++)
-            V[permutations[i].second].q = - q_strength * randomAreaList[i] / total_area;
+            V[permutations[i].second].q = - 0.12 * randomAreaList[i];
 
 
     }
