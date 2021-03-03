@@ -417,11 +417,11 @@ void INTERFACE::assign_random_q_values(double q_strength, double alpha, int num_
 	}
 	//code for plus and minus
 	    for (i = 0; i < nVertPerPatch; i++)
-            V[permutations[i].second].q = 0.12;
+            V[permutations[i].second].q = 0.12 * randomAreaList[i];
         for (; i < (number_of_vertices - nVertPerPatch ); i++)
             V[permutations[i].second].q = 0;
         for (; i < number_of_vertices; i++)
-            V[permutations[i].second].q = - 0.12;
+            V[permutations[i].second].q = - 0.12 * randomAreaList[i];
 
 
     }
@@ -774,7 +774,7 @@ void INTERFACE::assign_random_q_values(double q_strength, double alpha, int num_
     assign_dual_boundary_edges();
 
     //  Scale the vertices' charges to achieve the target net charge exactly:
-    if (q_strength == 0){
+  /*  if (q_strength == 0){
         for (unsigned int i = 0; i < V.size(); i++) {
             V[i].q = 0;
         }
@@ -798,6 +798,7 @@ void INTERFACE::assign_random_q_values(double q_strength, double alpha, int num_
             V[i].q = V[i].q * (q_target / q_actual);
         }
     }
+*/
 
 /*	if (0)
 	{
