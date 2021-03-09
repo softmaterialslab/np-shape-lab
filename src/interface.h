@@ -116,7 +116,7 @@ public:
     void assign_dual_boundary_edges();
 
     void assign_dual_initial();
-
+    void reassign_pm_charges();
     void reassign_charges();
 
     void output_configuration();                                // Function to output information on the initial membrane.
@@ -132,6 +132,8 @@ public:
     void assign_random_q_values(double q_strength, double alpha, int num_divisions, double fracChargedPatch, char randomFlag, char functionFlag);
 
     void assign_external_q_values(double q_strength, string externalPattern);
+
+    void assign_random_plusminus_values(double sigma, double radius, int num_divisions, double fracChargedPatch, char randomFlag);
 
     void put_counterions(double q_actual, double unit_radius_sphere, double ion_diameter, double box_halflength, vector<PARTICLE> &counterions, int counterion_valency, bool counterion_flag);
 

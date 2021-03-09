@@ -264,8 +264,6 @@ void INTERFACE::assign_dual_initial() {
             (F[i].itsV[0]->posvec.z + F[i].itsV[1]->posvec.z + F[i].itsV[2]->posvec.z) / 3.0)));
         Dual[i].index = i;
         Dual[i].q = (F[i].itsV[0]->q + F[i].itsV[1]->q + F[i].itsV[2]->q) / 3.0;
-        if (Dual[i].q != 0)
-            Dual[i].q = 0.12 * (F[i].itsV[0]->itsarea + F[i].itsV[1]->itsarea + F[i].itsV[2]->itsarea) / 3.0;
     }
 }
 
@@ -288,6 +286,44 @@ void INTERFACE::reassign_charges() {
         Dual[i].q *= (q_original / (q_original + q_dual));
     }
 }
+
+void INTERFACE::reassign_pm_charges() {
+    double q_original_positive = 0.0;
+    double q_original_negative = 0.0;
+    double q_dual_positive = 0.0;
+    double q_dual_negative = 0.0;
+
+    //Compute total charges (q_dual + q_orignal)
+    for (unsigned int i = 0; i < number_of_vertices; i++) {
+        if (V[i].q > 0)
+            q_original_positive += V[i].q;
+        if (V[i].q < 0)
+            q_original_negative += V[i].q;
+    }
+
+    for (unsigned int i = 0; i < number_of_faces; i++) {
+        if (Dual[i].q > 0)
+            q_dual_positive += Dual[i].q;
+        if (Dual[i].q < 0)
+            q_dual_negative += Dual[i].q;
+    }
+
+    for (unsigned int i = 0; i < number_of_vertices; i++) {
+        if (V[i].q > 0)
+            V[i].q *= (q_original_positive / (q_original_positive + q_dual_positive));
+        if (V[i].q < 0)
+            V[i].q *= (q_original_negative / (q_original_negative + q_dual_negative))
+    }
+    for (unsigned int i = 0; i < number_of_faces; i++) {
+        if (Dual[i].q > 0)
+            Dual[i].q *= (q_dual_positive / (q_original_positive + q_dual_positive));
+        if (Dual[i].q < 0)
+            Dual[i].q *= (q_dual_negative / (q_original_negative + q_dual_negative));
+    }
+
+}
+
+
 
 
 //  Load off-file for restarting pre-existing simulations (only works if there was no edge-flipping, same connectivity):
@@ -400,10 +436,10 @@ void INTERFACE::assign_random_q_values(double q_strength, double alpha, int num_
     }
     if (num_divisions == 2) {           //  two patch Janus, specifiable fractional coverage
 		 unsigned int i;
-        //for (i = 0; i < nVertPerPatch; i++)
-        //    V[permutations[i].second].q = q_strength * randomAreaList[i] / total_area;
-        //for (; i < number_of_vertices; i++)
-        //    V[permutations[i].second].q = 0;
+        for (i = 0; i < nVertPerPatch; i++)
+            V[permutations[i].second].q = q_strength * randomAreaList[i] / total_area;
+        for (; i < number_of_vertices; i++)
+            V[permutations[i].second].q = 0;
 	if (functionFlag == 'y'){
 		for (i = 0; i < number_of_vertices; i++) {
 		if (V[permutations[i].second].posvec.z <= 0 && (V[permutations[i].second].posvec.x-0.5) *( V[permutations[i].second].posvec.x-0.5)+V[permutations[i].second].posvec.z*V[permutations[i].second].posvec.z <= 0.25 ){
@@ -416,13 +452,14 @@ void INTERFACE::assign_random_q_values(double q_strength, double alpha, int num_
 	}
 	}
 	//code for plus and minus
+    /*
 	    for (i = 0; i < nVertPerPatch; i++)
             V[permutations[i].second].q = 0.12 * randomAreaList[i];
         for (; i < (number_of_vertices - nVertPerPatch ); i++)
             V[permutations[i].second].q = 0;
         for (; i < number_of_vertices; i++)
             V[permutations[i].second].q = - 0.12 * randomAreaList[i];
-
+    */
 
     }
     if (num_divisions == 3) {           //  n patch striped, approximately equal areas each about z-axis
@@ -774,7 +811,7 @@ void INTERFACE::assign_random_q_values(double q_strength, double alpha, int num_
     assign_dual_boundary_edges();
 
     //  Scale the vertices' charges to achieve the target net charge exactly:
-  /*  if (q_strength == 0){
+    if (q_strength == 0){
         for (unsigned int i = 0; i < V.size(); i++) {
             V[i].q = 0;
         }
@@ -798,7 +835,6 @@ void INTERFACE::assign_random_q_values(double q_strength, double alpha, int num_
             V[i].q = V[i].q * (q_target / q_actual);
         }
     }
-*/
 
 /*	if (0)
 	{
@@ -816,6 +852,81 @@ void INTERFACE::assign_random_q_values(double q_strength, double alpha, int num_
 		}
 	}*/
 }
+
+void INTERFACE::assign_random_plusminus_values(double sigma, double radius, int num_divisions, double fracChargedPatch, char randomFlag) {
+    vector<pair<double, int> > permutations;
+    for (unsigned int i = 0; i < number_of_vertices; i++)
+        permutations.push_back(pair<double, int>(V[i].posvec.z, i));
+    sort(permutations.begin(), permutations.end());
+    assert(num_divisions == 2); // Verify the prescribed number of divisions is supported.
+    if (number_of_vertices % num_divisions != 0)
+        if (world.rank() == 0)
+            cout << "Warning:  The number of vertices modulo the number of divisions is not zero; the closest approximation will be used." << endl;
+
+    // Previously, permutations & mismatched indices were used for pseudorandom scrambling.  This enforces a more random one.
+    vector<double> randomAreaList;
+    for (unsigned int i = 0; i < number_of_vertices; i++) {
+        randomAreaList.push_back(V[i].itsarea); // Create the to-be-randomized vertex area list:
+    }
+
+    // Randomize both the charge state list (for pH studies) and vertex area list (for normalization of all methods):
+    if (randomFlag == 'y') {
+        srand(123456);
+        random_shuffle(chargeStateList.begin(), chargeStateList.end());
+        random_shuffle(randomAreaList.begin(), randomAreaList.end());
+    }
+
+    unsigned int nVertPerPatch = (fracChargedPatch)*V.size();
+    double side_charges = sigma * (4 * pi * radius * radius) * fracChargedPatch;
+
+    if (num_divisions == 2) {           //  two patch Janus, specifiable fractional coverage
+        unsigned int i;
+        //code for plus and minus
+        for (i = 0; i < nVertPerPatch; i++)
+            V[permutations[i].second].q = sigma * randomAreaList[i];
+        for (; i < (number_of_vertices - nVertPerPatch); i++)
+            V[permutations[i].second].q = 0;
+        for (; i < number_of_vertices; i++)
+            V[permutations[i].second].q = -sigma * randomAreaList[i];
+
+
+    }
+
+    //  Scale the vertices' charges to achieve the target net charge exactly:
+    if (q_strength == 0) {
+        for (unsigned int i = 0; i < V.size(); i++) {
+            V[i].q = 0;
+        }
+    }
+    else {
+        //  Assess total actual charge on the membrane (which may be less than the desired amount due to shuffling):
+        double q_positive_actual = 0.;
+        double q_negative_actual = 0.;
+        for (unsigned int i = 0; i < nVertPerPatch; i++) {
+            q_positive_actual += V[permutations[i].second].q;
+        }
+        for (unsigned int i = number_of_vertices - nVertPerPatch; i < nVertPerPatch; i++) {
+            q_negative_actual += V[permutations[i].second].q;
+        }
+
+
+        //  Assess the target total charge, to scale charged vertices by to achieve it:
+        double q_target;
+        q_target = round(side_charges); // Round ensures electroneutrality with counterions.
+
+    //  Scale the vertices' charges to achieve the target net charge exactly:
+        for (unsigned int i = 0; i < nVertPerPatch; i++) {
+            V[permutations[i].second].q = V[permutations[i].second].q * (q_target / q_positive_actual);
+        }
+        for (unsigned int i = number_of_vertices - nVertPerPatch; i < nVertPerPatch; i++) {
+            V[permutations[i].second].q = V[permutations[i].second].q * (-1.0*q_target / q_positive_actual);
+        }
+
+
+}
+
+
+
 
 //  NB added function to import charge values/patterns from a file:
 void INTERFACE::assign_external_q_values(double q_strength, string externalPattern) {
@@ -914,6 +1025,7 @@ void INTERFACE::put_counterions(double q_actual, double unit_radius_sphere, doub
 assert(int(round(q_actual)) % counterion_valency == 0);
 // Compute the total number needed for ideal integer valency:
 unsigned int total_counterions = round(abs(q_actual / counterion_valency));
+if (total_counterions % 2 != 0) total_counterions += 1;
 // NP-Counterion touching distance:
 double r0 = (2.5 + 0.5 * counterion_diameter);      //Assuming the biggest radius is based on the longest axis of the deformed shape which lambda = 2.5.
 // Box-Counterion touching distance (spherical box):

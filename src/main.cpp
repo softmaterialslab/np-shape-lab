@@ -90,7 +90,7 @@ int main(int argc, const char *argv[]) {
     unsigned int disc1, disc2;
     double lambda_a, lambda_v;          // lambdas measuring strength of area & volume constraints  (unused)
 
-    double unit_radius_sphere, youngsModulus, q_strength, alpha, conc_out, z_out; // radius (in nm), net charge (if all charged), fractional q-occupancy, salt conc (MOLAR), salt valency
+    double unit_radius_sphere, youngsModulus, q_strength, alpha, conc_out, z_out, sigma; // radius (in nm), net charge (if all charged), fractional q-occupancy, salt conc (MOLAR), salt valency, charge density
     int numPatches;
     double fracChargedPatch;
     char randomFlag, offFlag, geomConstraint, bucklingFlag, constraintForm, counterionFlag, functionFlag;  // functionFlag indicates different pattern initializations, -y for yingyang pattern, -c for cube formation.
@@ -114,6 +114,8 @@ int main(int argc, const char *argv[]) {
              "Radius of the initial sphere & simulation unit of length (in nanometers).")
             ("netCharge,q", value<double>(&q_strength)->default_value(600),
              "Net NP charge, if fully occupied (elementary charges).")
+            ("ChargeDensity,A", value<double>(&sigma)->default_value(0.12),
+             "NP charge Density, Default to be 0.12.")
             ("saltConc,c", value<double>(&conc_out)->default_value(0.005),
              "Salt concentration (Molar).")
             ("tensSigma,t", value<double>(&boundary.sigma_a)->default_value(1),
@@ -242,7 +244,8 @@ int main(int argc, const char *argv[]) {
     boundary.discretize(disc1, disc2);            // discretize the interface
     if (disc1 != 0 || disc2 != 0) {
         if (externalPattern == "None") 
-			  boundary.assign_random_q_values(q_strength, alpha, numPatches, fracChargedPatch, randomFlag, functionFlag);
+			  //boundary.assign_random_q_values(q_strength, alpha, numPatches, fracChargedPatch, randomFlag, functionFlag);
+              boundary.assign_random_plusminus_values(sigma, unit_radius_sphere, numPatches, fracChargedPatch, randomFlag);
         else 
 			  boundary.assign_external_q_values(q_strength, externalPattern);
 	 }
@@ -474,15 +477,19 @@ int main(int argc, const char *argv[]) {
 
     double box_halflength_new = pow(((4.0 / 3.0) * 3.1415926 * unit_radius_sphere * unit_radius_sphere * unit_radius_sphere) / packing_fraction, 1.0 / 3.0) / (2.0 * unit_radius_sphere);
     double qLJ = charge_e / pow(4.0 * pi * epsilon_0 * KB_raw * room_temperature * unit_radius_sphere * pow(10.0, -9), 1.0 / 2.0);
+    double actual_side_q_charge = round(sigma * (4 * pi * unit_radius_sphere * unit_radius_sphere) * fracChargedPatch);
     cout << "box radius: " << box_halflength_new << endl;
     cout << "qLJ: " << qLJ << endl;
     
     double counterion_flag = true;
 
     boundary.assign_dual_initial();
+    boundary.reassign_pm_charges();
     //boundary.reassign_charges();
     cout << "Finish assigning duals and recomputing all the charges" << endl;
-    boundary.put_counterions(q_strength, unit_radius_sphere, counterion_diameter, box_halflength_new, counterions, counterion_valency, counterion_flag);
+
+    //boundary.put_counterions(q_strength, unit_radius_sphere, counterion_diameter, box_halflength_new, counterions, counterion_valency, counterion_flag);
+    boundary.put_counterions(actual_side_q_charge, unit_radius_sphere, counterion_diameter, box_halflength_new, counterions, counterion_valency, counterion_flag);
     cout << "Finish putting ions" << endl;
     create_input_coordinate(boundary.V, boundary.Dual, counterions, box_halflength_new, qLJ, 0.6/unit_radius_sphere);
     cout << "Finish generating condensation input file " << endl;
