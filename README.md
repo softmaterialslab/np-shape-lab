@@ -69,4 +69,4 @@
 * nanoHUB tool: https://nanohub.org/tools/npshapelab
 * nanoBIO workshop talk: https://www.youtube.com/watch?v=C4jvU6TuXao&list=PLnC9T36tFWrDnTt4yex5asWW624ceP9Jd&index=5
 * Louis Stokes workshop: https://www.youtube.com/watch?v=mGhCOmNg6FI&list=PLnC9T36tFWrBy5xGsn99IQEWo6BmHxUq7&index=5
-* Updated with travis integration testing.
+* Updated with travis integration testing
