@@ -312,7 +312,7 @@ void INTERFACE::reassign_pm_charges() {
         if (V[i].q > 0)
             V[i].q *= (q_original_positive / (q_original_positive + q_dual_positive));
         if (V[i].q < 0)
-            V[i].q *= (q_original_negative / (q_original_negative + q_dual_negative))
+            V[i].q *= (q_original_negative / (q_original_negative + q_dual_negative));
     }
     for (unsigned int i = 0; i < number_of_faces; i++) {
         if (Dual[i].q > 0)
@@ -869,12 +869,6 @@ void INTERFACE::assign_random_plusminus_values(double sigma, double radius, int 
         randomAreaList.push_back(V[i].itsarea); // Create the to-be-randomized vertex area list:
     }
 
-    // Randomize both the charge state list (for pH studies) and vertex area list (for normalization of all methods):
-    if (randomFlag == 'y') {
-        srand(123456);
-        random_shuffle(chargeStateList.begin(), chargeStateList.end());
-        random_shuffle(randomAreaList.begin(), randomAreaList.end());
-    }
 
     unsigned int nVertPerPatch = (fracChargedPatch)*V.size();
     double side_charges = sigma * (4 * pi * radius * radius) * fracChargedPatch;
@@ -919,10 +913,11 @@ void INTERFACE::assign_random_plusminus_values(double sigma, double radius, int 
             V[permutations[i].second].q = V[permutations[i].second].q * (q_target / q_positive_actual);
         }
         for (unsigned int i = number_of_vertices - nVertPerPatch; i < nVertPerPatch; i++) {
-            V[permutations[i].second].q = V[permutations[i].second].q * (-1.0*q_target / q_positive_actual);
+            V[permutations[i].second].q = V[permutations[i].second].q * (-1.0 * q_target / q_positive_actual);
         }
 
 
+    }
 }
 
 
