@@ -913,7 +913,7 @@ void INTERFACE::assign_random_plusminus_values(double sigma, double radius, int 
             V[permutations[i].second].q = V[permutations[i].second].q * (q_target / q_positive_actual);
         }
         for (unsigned int i = number_of_vertices - nVertPerPatch; i < nVertPerPatch; i++) {
-            V[permutations[i].second].q = V[permutations[i].second].q * (-1.0 * q_target / q_positive_actual);
+            V[permutations[i].second].q = V[permutations[i].second].q * (-1.0 * q_target / q_negative_actual);
         }
 
 
