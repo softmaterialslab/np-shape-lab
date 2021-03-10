@@ -886,6 +886,7 @@ void INTERFACE::assign_random_plusminus_values(double sigma, double radius, int 
 
     }
 
+    /*
     //  Scale the vertices' charges to achieve the target net charge exactly:
     if (sigma == 0) {
         for (unsigned int i = 0; i < V.size(); i++) {
@@ -918,6 +919,7 @@ void INTERFACE::assign_random_plusminus_values(double sigma, double radius, int 
 
 
     }
+    */
 }
 
 
