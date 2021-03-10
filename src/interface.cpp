@@ -886,7 +886,7 @@ void INTERFACE::assign_random_plusminus_values(double sigma, double radius, int 
 
     }
 
-    /*
+  
     //  Scale the vertices' charges to achieve the target net charge exactly:
     if (sigma == 0) {
         for (unsigned int i = 0; i < V.size(); i++) {
@@ -900,7 +900,7 @@ void INTERFACE::assign_random_plusminus_values(double sigma, double radius, int 
         for (unsigned int i = 0; i < nVertPerPatch; i++) {
             q_positive_actual += V[permutations[i].second].q;
         }
-        for (unsigned int i = number_of_vertices - nVertPerPatch; i < nVertPerPatch; i++) {
+        for (unsigned int i = number_of_vertices - nVertPerPatch; i < number_of_vertices; i++) {
             q_negative_actual += V[permutations[i].second].q;
         }
 
@@ -913,13 +913,12 @@ void INTERFACE::assign_random_plusminus_values(double sigma, double radius, int 
         for (unsigned int i = 0; i < nVertPerPatch; i++) {
             V[permutations[i].second].q = V[permutations[i].second].q * (q_target / q_positive_actual);
         }
-        for (unsigned int i = number_of_vertices - nVertPerPatch; i < nVertPerPatch; i++) {
+        for (unsigned int i = number_of_vertices - nVertPerPatch; i < number_of_vertices; i++) {
             V[permutations[i].second].q = V[permutations[i].second].q * (-1.0 * q_target / q_negative_actual);
         }
 
 
     }
-    */
 }
 
 
