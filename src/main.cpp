@@ -467,7 +467,7 @@ int main(int argc, const char *argv[]) {
         upperBoundIons = counterions.size() - 1; // With zero counterions, this is negative, preventing loop evaluation.
     }
 
-    md_interface(boundary, counterions, mesh_bath, ions_bath, mdremote, geomConstraint, bucklingFlag, constraintForm, scalefactor, box_halflength);
+    md_interface(boundary, counterions, mesh_bath, ions_bath, mdremote, geomConstraint, bucklingFlag, constraintForm, scalefactor, box_halflength, unit_radius_sphere);
     boundary.compute_local_energies(scalefactor);
     boundary.compute_local_energies_by_component();
 
