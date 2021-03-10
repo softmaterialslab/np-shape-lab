@@ -47,7 +47,7 @@ void initialize_velocities_to_zero(vector<VERTEX> &V, vector<PARTICLE> &counteri
 }
 
 // interface movie for VMD
-void interface_movie(int num, vector<VERTEX> &V, vector<PARTICLE> &counterions, double box_halflength) {
+void interface_movie(int num, vector<VERTEX> &V, vector<PARTICLE> &counterions, double box_halflength, double radius) {
     if (world.rank() == 0) {
         ofstream outdump("outfiles/p.lammpstrj", ios::app);
 
@@ -74,7 +74,7 @@ void interface_movie(int num, vector<VERTEX> &V, vector<PARTICLE> &counterions, 
                 type = "0";
             outdump << i << "\t" << type << "\t" << V[i].posvec.x << "\t" << V[i].posvec.y << "\t" << V[i].posvec.z
                     << "\t"
-                    << V[i].q << "\t" << V[i].itsarea << "\t" << (V[i].q / V[i].itsarea) << endl;
+                    << V[i].q << "\t" << V[i].itsarea << "\t" << (V[i].q / (V[i].itsarea*radius*radius)) << endl;
         }
         for (unsigned int i = 0; i < counterions.size(); i++) {
             outdump << i + V.size() << "\t" << 2 << "\t" << counterions[i].posvec.x << "\t" << counterions[i].posvec.y

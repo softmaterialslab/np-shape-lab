@@ -417,7 +417,7 @@ int main(int argc, const char *argv[]) {
         list_out << "Off-file loaded: " << offFlag << endl;
 
         // (NB added) Print the initial state in the movie file, prior to MD:
-        interface_movie(0, boundary.V, counterions, box_halflength);  // NB added.  Note, calls this "time step -1" in movie file.
+        interface_movie(0, boundary.V, counterions, box_halflength, unit_radius_sphere);  // NB added.  Note, calls this "time step -1" in movie file.
 
     }
     // Initiate MD of the boundary/membrane:
