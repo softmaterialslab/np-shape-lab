@@ -59,7 +59,7 @@ Testing parameters: echo 3 4 100 35 0.0001 300 0.8 0 1 1
 using namespace boost::program_options;
 
 // Declaring function to initiate and propagate the MD:
-void md_interface(INTERFACE &, vector<PARTICLE> &, vector<THERMOSTAT> &, vector<THERMOSTAT> &, CONTROL &, char, char, char, const double scalefactor, double box_halflength);
+void md_interface(INTERFACE &, vector<PARTICLE> &, vector<THERMOSTAT> &, vector<THERMOSTAT> &, CONTROL &, char, char, char, const double scalefactor, double box_halflength, double radius);
 
 //MPI boundary parameters
 unsigned int lowerBoundMesh;

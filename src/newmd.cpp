@@ -7,7 +7,7 @@
 #include "newenergies.h"
 
 void md_interface(INTERFACE &boundary, vector<PARTICLE> &counterions, vector<THERMOSTAT> &mesh_bath, vector<THERMOSTAT> &ions_bath, CONTROL &cpmdremote, char geomConstraint, char bucklingFlag,
-                  char constraintForm, const double scalefactor, double box_radius) {
+                  char constraintForm, const double scalefactor, double box_radius, double radius) {
 
     double percentage = 0, percentagePre = -1;
 
@@ -236,7 +236,7 @@ void md_interface(INTERFACE &boundary, vector<PARTICLE> &counterions, vector<THE
             if (num % cpmdremote.offfreq == 0)
                 interface_off(num, boundary);
             if (world.rank() == 0)
-                interface_movie(num, boundary.V, counterions, box_radius);
+                interface_movie(num, boundary.V, counterions, box_radius, radius );
         }
 
         /*							// NOTE COMMENTING OUT THE POVRAY BLOCK AS IT IS NOT NECESSARY FOR INVESTIGATIONS
