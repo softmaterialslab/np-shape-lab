@@ -104,6 +104,7 @@ void create_input_coordinate(vector<VERTEX>& V, vector<VERTEX>& Dual,vector<PART
         outdump << "Atoms" << endl;
         outdump << endl;
         //string type;
+        //diameter is in reduced unit
         for (unsigned int i = 0; i < V.size(); i++) {
             outdump << i+1 << "\t" << 1 << "\t" << V[i].posvec.x << "\t" << V[i].posvec.y << "\t" << V[i].posvec.z
                 << "\t"
