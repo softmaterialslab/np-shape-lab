@@ -32,3 +32,19 @@ def test_convert_SVG_PNG(tb):
     assert os.path.exists("test/resources/output.png") == 1
     os.remove("test/resources/output.png")
 
+
+@testbook.testbook('npshape-frontend.ipynb', execute=True)
+def test_convert_test_fn(tb):
+    func = tb.ref("convert_SVG_PNG")
+
+    dwg = svgwrite.Drawing('test/resources/test.svg', profile='tiny', size=(270, 270))
+    dwg.add(dwg.line((0, 0), (10, 0), stroke=svgwrite.rgb(10, 10, 16, '%')))
+    dwg.add(dwg.text('Test', insert=(0, 0.2), fill='red'))
+    dwg.save()
+    if not os.path.exists('snapshot_png'):
+        os.mkdir("snapshot_png")
+
+    func("test/resources/test.svg", "test/resources/output.png")
+    assert os.path.exists("test/resources/output.pn") == 1
+    os.remove("test/resources/output.png")
+
