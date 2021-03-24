@@ -321,24 +321,27 @@ void INTERFACE::reassign_pm_charges() {
             Dual[i].q *= (q_dual_negative / (q_original_negative + q_dual_negative));
     }
 
-
+    double q_original_positive_ref = 0.0;
+    double q_original_negative_ref = 0.0;
+    double q_dual_positive_ref = 0.0;
+    double q_dual_negative_ref = 0.0;
     //testing
     for (unsigned int i = 0; i < number_of_vertices; i++) {
         if (V[i].q > 0)
-            q_original_positive += V[i].q;
+            q_original_positive_ref += V[i].q;
         if (V[i].q < 0)
-            q_original_negative += V[i].q;
+            q_original_negative_ref += V[i].q;
     }
 
     for (unsigned int i = 0; i < number_of_faces; i++) {
         if (Dual[i].q > 0)
-            q_dual_positive += Dual[i].q;
+            q_dual_positive_ref += Dual[i].q;
         if (Dual[i].q < 0)
-            q_dual_negative += Dual[i].q;
+            q_dual_negative_ref += Dual[i].q;
     }
 
-    cout << "positive total charges(include dual): "<< q_original_positive+ q_dual_positive << endl;
-    cout  << "negative total charges(include dual): "<< q_original_negative+ q_dual_negative << endl;
+    cout << "positive total charges(include dual): "<< q_original_positive_ref + q_dual_positive_ref << endl;
+    cout  << "negative total charges(include dual): "<< q_original_negative_ref + q_dual_negative_ref << endl;
 
 }
 
