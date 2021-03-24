@@ -317,9 +317,9 @@ void INTERFACE::reassign_pm_charges() {
     }
     for (unsigned int i = 0; i < number_of_faces; i++) {
         if (Dual[i].q > 0)
-            Dual[i].q *= (q_dual_positive / (q_original_positive + q_dual_positive));
+            Dual[i].q *= (q_original_positive / (q_original_positive + q_dual_positive));
         if (Dual[i].q < 0)
-            Dual[i].q *= (q_dual_negative / (q_original_negative + q_dual_negative));
+            Dual[i].q *= (q_original_negative / (q_original_negative + q_dual_negative));
     }
 
     double q_original_positive_ref = 0.0;
