@@ -245,7 +245,7 @@ int main(int argc, const char *argv[]) {
     if (disc1 != 0 || disc2 != 0) {
         if (externalPattern == "None") 
 			  //boundary.assign_random_q_values(q_strength, alpha, numPatches, fracChargedPatch, randomFlag, functionFlag);
-              boundary.assign_random_plusminus_values(sigma, unit_radius_sphere, numPatches, fracChargedPatch, randomFlag);
+              boundary.assign_random_plusminus_values(sigma, unit_radius_sphere, numPatches, fracChargedPatch, randomFlag, functionFlag);
         else 
 			  boundary.assign_external_q_values(q_strength, externalPattern);
 	 }

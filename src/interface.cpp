@@ -876,7 +876,7 @@ void INTERFACE::assign_random_q_values(double q_strength, double alpha, int num_
 	}*/
 }
 
-void INTERFACE::assign_random_plusminus_values(double sigma, double radius, int num_divisions, double fracChargedPatch, char randomFlag) {
+void INTERFACE::assign_random_plusminus_values(double sigma, double radius, int num_divisions, double fracChargedPatch, char randomFlag, char functionFlag) {
     vector<pair<double, int> > permutations;
     for (unsigned int i = 0; i < number_of_vertices; i++)
         permutations.push_back(pair<double, int>(V[i].posvec.z, i));
@@ -906,45 +906,53 @@ void INTERFACE::assign_random_plusminus_values(double sigma, double radius, int 
         for (; i < number_of_vertices; i++)
             V[permutations[i].second].q = -1.0 * sigma * randomAreaList[i];
             //V[permutations[i].second].q = 0;
-
-
     }
 
-  
-    //  Scale the vertices' charges to achieve the target net charge exactly:
-    if (sigma == 0) {
-        for (unsigned int i = 0; i < V.size(); i++) {
-            V[i].q = 0;
+    if (functionFlag == 'c') {
+        for (unsigned int i = 0; i < number_of_vertices; i++) {
+            if ((V[permutations[i].second].posvec.x * V[permutations[i].second].posvec.x + V[permutations[i].second].posvec.y * V[permutations[i].second].posvec.y <= 0.25) || (V[permutations[i].second].posvec.y * V[permutations[i].second].posvec.y + V[permutations[i].second].posvec.z * V[permutations[i].second].posvec.z <= 0.25) || (V[permutations[i].second].posvec.x * V[permutations[i].second].posvec.x + V[permutations[i].second].posvec.z * V[permutations[i].second].posvec.z <= 0.25)) {
+                V[permutations[i].second].q = sigma * randomAreaList[i];
+            }
+            else {
+                V[permutations[i].second].q = 0;
+            }
         }
-    }
     else {
-        //  Assess total actual charge on the membrane (which may be less than the desired amount due to shuffling):
-        double q_positive_actual = 0.;
-        double q_negative_actual = 0.;
-        for (unsigned int i = 0; i < nVertPerPatch; i++) {
-            q_positive_actual += V[permutations[i].second].q;
+        //  Scale the vertices' charges to achieve the target net charge exactly:
+        if (sigma == 0) {
+            for (unsigned int i = 0; i < V.size(); i++) {
+                V[i].q = 0;
+            }
         }
-        
-        for (unsigned int i = number_of_vertices - nVertPerPatch; i < number_of_vertices; i++) {
-            q_negative_actual += V[permutations[i].second].q;
-        }
-        
+        else {
+            //  Assess total actual charge on the membrane (which may be less than the desired amount due to shuffling):
+            double q_positive_actual = 0.;
+            double q_negative_actual = 0.;
+            for (unsigned int i = 0; i < nVertPerPatch; i++) {
+                q_positive_actual += V[permutations[i].second].q;
+            }
 
-        //  Assess the target total charge, to scale charged vertices by to achieve it:
-        double q_target;
-        q_target = round(side_charges); // Round ensures electroneutrality with counterions.
+            for (unsigned int i = number_of_vertices - nVertPerPatch; i < number_of_vertices; i++) {
+                q_negative_actual += V[permutations[i].second].q;
+            }
 
-    //  Scale the vertices' charges to achieve the target net charge exactly:
-        for (unsigned int i = 0; i < nVertPerPatch; i++) {
-            V[permutations[i].second].q = V[permutations[i].second].q * (q_target / q_positive_actual);
-        }
-        
-        for (unsigned int i = number_of_vertices - nVertPerPatch; i < number_of_vertices; i++) {
-            V[permutations[i].second].q = V[permutations[i].second].q * (-1.0 * q_target / q_negative_actual);
-        }
-        
 
+            //  Assess the target total charge, to scale charged vertices by to achieve it:
+            double q_target;
+            q_target = round(side_charges); // Round ensures electroneutrality with counterions.
+
+        //  Scale the vertices' charges to achieve the target net charge exactly:
+            for (unsigned int i = 0; i < nVertPerPatch; i++) {
+                V[permutations[i].second].q = V[permutations[i].second].q * (q_target / q_positive_actual);
+            }
+
+            for (unsigned int i = number_of_vertices - nVertPerPatch; i < number_of_vertices; i++) {
+                V[permutations[i].second].q = V[permutations[i].second].q * (-1.0 * q_target / q_negative_actual);
+            }
+        }
     }
+    }
+ 
 }
 
 
