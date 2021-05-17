@@ -917,6 +917,7 @@ void INTERFACE::assign_random_plusminus_values(double sigma, double radius, int 
                 V[permutations[i].second].q = 0;
             }
         }
+    }
     else {
         //  Scale the vertices' charges to achieve the target net charge exactly:
         if (sigma == 0) {
@@ -950,7 +951,6 @@ void INTERFACE::assign_random_plusminus_values(double sigma, double radius, int 
                 V[permutations[i].second].q = V[permutations[i].second].q * (-1.0 * q_target / q_negative_actual);
             }
         }
-    }
     }
  
 }
