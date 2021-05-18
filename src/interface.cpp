@@ -881,7 +881,7 @@ void INTERFACE::assign_random_plusminus_values(double sigma, double radius, int 
     for (unsigned int i = 0; i < number_of_vertices; i++)
         permutations.push_back(pair<double, int>(V[i].posvec.z, i));
     sort(permutations.begin(), permutations.end());
-    assert(num_divisions == 2); // Verify the prescribed number of divisions is supported.
+    //assert(num_divisions == 2); // Verify the prescribed number of divisions is supported.
     if (number_of_vertices % num_divisions != 0)
         if (world.rank() == 0)
             cout << "Warning:  The number of vertices modulo the number of divisions is not zero; the closest approximation will be used." << endl;
@@ -911,7 +911,7 @@ void INTERFACE::assign_random_plusminus_values(double sigma, double radius, int 
     if (functionFlag == 'c') {
         for (unsigned int i = 0; i < number_of_vertices; i++) {
             if ((V[permutations[i].second].posvec.x * V[permutations[i].second].posvec.x + V[permutations[i].second].posvec.y * V[permutations[i].second].posvec.y <= 0.25) || (V[permutations[i].second].posvec.y * V[permutations[i].second].posvec.y + V[permutations[i].second].posvec.z * V[permutations[i].second].posvec.z <= 0.25) || (V[permutations[i].second].posvec.x * V[permutations[i].second].posvec.x + V[permutations[i].second].posvec.z * V[permutations[i].second].posvec.z <= 0.25)) {
-                V[permutations[i].second].q = sigma * randomAreaList[i];
+                V[permutations[i].second].q = sigma * randomAreaList[i] * radius * radius;
             }
             else {
                 V[permutations[i].second].q = 0;
@@ -920,7 +920,6 @@ void INTERFACE::assign_random_plusminus_values(double sigma, double radius, int 
     }
     else {
         //  Scale the vertices' charges to achieve the target net charge exactly:
-        /*
         if (sigma == 0) {
             for (unsigned int i = 0; i < V.size(); i++) {
                 V[i].q = 0;
@@ -952,7 +951,6 @@ void INTERFACE::assign_random_plusminus_values(double sigma, double radius, int 
                 V[permutations[i].second].q = V[permutations[i].second].q * (-1.0 * q_target / q_negative_actual);
             }
         }
-        */
     }
  
 }
