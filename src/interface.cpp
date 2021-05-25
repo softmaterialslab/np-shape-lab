@@ -895,7 +895,7 @@ void INTERFACE::assign_random_plusminus_values(double sigma, double radius, int 
 
     unsigned int nVertPerPatch = (fracChargedPatch)*V.size();
     double side_charges = sigma * (4 * pi * radius * radius) * fracChargedPatch;
-    double patch_radius = pow(fracChargedPatch / 2.0, 0.5) * radius;
+    double patch_radius = pow(fracChargedPatch / 2.0, 0.5);
 
     if (num_divisions == 2) {           //  two patch Janus, specifiable fractional coverage
         unsigned int i;
