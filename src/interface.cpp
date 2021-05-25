@@ -895,6 +895,7 @@ void INTERFACE::assign_random_plusminus_values(double sigma, double radius, int 
 
     unsigned int nVertPerPatch = (fracChargedPatch)*V.size();
     double side_charges = sigma * (4 * pi * radius * radius) * fracChargedPatch;
+    double patch_radius = pow(fracChargedPatch / 2.0, 0.5) * radius;
 
     if (num_divisions == 2) {           //  two patch Janus, specifiable fractional coverage
         unsigned int i;
@@ -910,7 +911,7 @@ void INTERFACE::assign_random_plusminus_values(double sigma, double radius, int 
 
     if (functionFlag == 'c') {
         for (unsigned int i = 0; i < number_of_vertices; i++) {
-            if ((V[permutations[i].second].posvec.x * V[permutations[i].second].posvec.x + V[permutations[i].second].posvec.y * V[permutations[i].second].posvec.y <= 0.25) || (V[permutations[i].second].posvec.y * V[permutations[i].second].posvec.y + V[permutations[i].second].posvec.z * V[permutations[i].second].posvec.z <= 0.25) || (V[permutations[i].second].posvec.x * V[permutations[i].second].posvec.x + V[permutations[i].second].posvec.z * V[permutations[i].second].posvec.z <= 0.25)) {
+            if ((V[permutations[i].second].posvec.x * V[permutations[i].second].posvec.x + V[permutations[i].second].posvec.y * V[permutations[i].second].posvec.y <= patch_radius*patch_radius) || (V[permutations[i].second].posvec.y * V[permutations[i].second].posvec.y + V[permutations[i].second].posvec.z * V[permutations[i].second].posvec.z <= patch_radius * patch_radius) || (V[permutations[i].second].posvec.x * V[permutations[i].second].posvec.x + V[permutations[i].second].posvec.z * V[permutations[i].second].posvec.z <= patch_radius * patch_radius)) {
                 V[permutations[i].second].q = sigma * randomAreaList[i] * radius * radius;
             }
             else {
