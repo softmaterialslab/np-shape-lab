@@ -17,5 +17,6 @@ pip install pandas
 jupyter nbextension enable --py widgetsnbextension
 
 export ENVIRON_CONFIG_DIRS=","
+export PATH=$PATH:$PWD
 pytest test || exit 1
 
