@@ -4,7 +4,7 @@
 * First, git clone the project:
 ```git clone https://github.com/softmaterialslab/np-shape-lab.git```
 * Then, load the required modules using following command:
-```module swap PrgEnv-cray PrgEnv-gnu && module load boost/1.65.0 && module load gsl```
+```module swap PrgEnv-intel PrgEnv-gnu && module load boost/gnu && module load gsl```
 * Next, go to the root directory:
  ```cd np-shape-lab```
 * Then, install the project:
