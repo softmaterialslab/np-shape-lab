@@ -58,7 +58,7 @@ def test_example_three():
 
     df = pd.read_csv('outfiles/energy_in_parts_kE_bE_sE_tE_ljE_esE.dat', sep=r"\s+", header=None)
     t = df.iat[-1, 4]
-    assert math.isclose(t, 555.611, rel_tol=1e-1)
+    assert math.isclose(t, 304.473, rel_tol=1e-1)
 
 
 def test_example_four():
@@ -70,8 +70,8 @@ def test_example_four():
     assert math.isclose(t, 12.3795, rel_tol=1e-2)
 
     df = pd.read_csv('outfiles/energy_in_parts_kE_bE_sE_tE_ljE_esE.dat', sep=r"\s+", header=None)
-    t = df.iat[-1, 4]
-    assert math.isclose(t, 0, rel_tol=1e-1)
+    t = df.iat[-1, 3]
+    assert math.isclose(t, 5.87409, rel_tol=1e-1)
 
 def test_example_five():
     command = "np_shape_lab -R 10 -q 600 -N 2 -p 0.5 -c 0.005 -t 1 -v 1 -b 40 -s 40 -S 25000 -D 4 -F n -H y"
@@ -83,6 +83,6 @@ def test_example_five():
 
     df = pd.read_csv('outfiles/energy_in_parts_kE_bE_sE_tE_ljE_esE.dat', sep=r"\s+", header=None)
     t = df.iat[-1, 6]
-    assert math.isclose(t, 543.043, rel_tol=1e-1)
+    assert math.isclose(t, 304.044, rel_tol=1e-1)
 
 
