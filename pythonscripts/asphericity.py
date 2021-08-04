@@ -1,5 +1,6 @@
 from numpy import linalg as LA
 import csv
+import matplotlib.pyplot as plt
 import numpy as np
 
 indices = []
@@ -9,7 +10,7 @@ zPos = []
 charge = []
 
 # loop through data as a csv, store data in lists
-with open('data.txt', mode='r') as csv_file:
+with open('sphere.txt', mode='r') as csv_file:
     csv_reader = csv.reader(csv_file, delimiter='\t')
     fields = next(csv_reader)
     i=0
@@ -24,7 +25,7 @@ with open('data.txt', mode='r') as csv_file:
 # get number of vertices for future use
 Nv = i
 print("Number of vertices: " + str(Nv))
-        
+
 # calculate center of mass
 COM = [0,0,0]
 COM[0] = sum(xPos) / len(xPos)
@@ -68,3 +69,29 @@ asphericity = ((1.5*((max(w))**2)) - (0.5*(Rg2))) / Rg2
 
 print("Asphericity: " + str(asphericity))
 
+# graph deviations
+
+# calculate magnitude of distances
+distance = []
+for i in range(0, Nv):
+    distance.append((xPos[i]**2)+(yPos[i]**2)+(zPos[i]))
+    if distance[i] < 0:
+        distance[i] = -1 * distance[i]
+indices = np.arange(0,Nv)
+avgRadius = []
+sphere = np.arange(0,Nv)
+for item in sphere:
+    sphere[item]=1
+
+average1 = sum(distance)/Nv
+
+for item in range(0,Nv):
+    avgRadius.append(average1)
+
+
+plt.plot(indices, distance, 'o', label='vertices distance')
+plt.plot(indices, avgRadius, label='average distance')
+plt.plot(indices,sphere,label='original distance')
+plt.legend()
+plt.title("Disc Dataset")
+plt.show()
