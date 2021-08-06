@@ -74,9 +74,8 @@ print("Asphericity: " + str(asphericity))
 # calculate magnitude of distances
 distance = []
 for i in range(0, Nv):
-    distance.append((xPos[i]**2)+(yPos[i]**2)+(zPos[i]))
-    if distance[i] < 0:
-        distance[i] = -1 * distance[i]
+    distance.append((xPos[i]**2)+(yPos[i]**2)+(zPos[i]**2))
+
 indices = np.arange(0,Nv)
 avgRadius = []
 sphere = np.arange(0,Nv)
@@ -93,5 +92,7 @@ plt.plot(indices, distance, 'o', label='vertices distance')
 plt.plot(indices, avgRadius, label='average distance')
 plt.plot(indices,sphere,label='original distance')
 plt.legend()
-plt.title("Disc Dataset")
+plt.title("Sphere Dataset")
 plt.show()
+
+#TODO make subplots to compare data

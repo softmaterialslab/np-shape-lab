@@ -27,50 +27,37 @@ with open('disc.txt', mode='r') as csv_file:
 # get number of vertices for future use
 Nv = len(indices)
 print("Number of vertices: " + str(Nv))
-        
-# calculate center of mass
-COM = [0,0,0]
-COM[0] = sum(xPos) / len(xPos)
-COM[1] = sum(yPos) / len(yPos)
-COM[2] = sum(zPos) / len(zPos)
-print("Center of Mass:" + str(COM))
 
 # calculate derived values (spherical coordinates, radii) 
 thetas = []
 phis = []
 radius = []
 for i in range(0, Nv-1):
-    thetas.append(np.arctan(yPos[i]/xPos[i]))
-    phis.append(np.arctan(((xPos[i])**2+(yPos[i])**2)**0.5/zPos[i]))
     radius.append(xPos[i]**2 + yPos[i]**2 + zPos[i]**2)
-
-# create and populate numpy array
-S = np.zeros((Nv, 3))
-for i in range(0, Nv-1):
-    S[i, 0] = Y00
-    S[i, 1] = Y01(thetas[i])
-    S[i, 2] = Y02(thetas[i])
-
-
-print(S)
-    
-# create R vector
+    if(zPos[i] == 0):
+        phis.append(0)
+    else:
+        phis.append(np.arctan(((xPos[i])**2+(yPos[i])**2)**0.5/zPos[i]))
+    if(xPos[i] == 0):
+        thetas.append(0)
+    else:
+        thetas.append(np.arctan(yPos[i]/xPos[i]))
+            
+# create R vector, sampling from dataset (vertices 0, 100, 200)
 R = []
-avgR = sum(indices)/Nv
-for i in range(0, Nv-1):
+avgR = sum(radius)/Nv
+for i in range(0, 300, 100):
     R.append((radius[i] - avgR)/avgR)
 
+# create square coefficient matrix, sampling from dataset (vertices 0, 100, 200)
+S2 = np.zeros((3, 3))
+row = 0
+for i in range(0, 300, 100):
+    S2[row, 0] = Y00
+    S2[row, 1] = Y01(thetas[i])
+    S2[row, 2] = Y02(thetas[i])
+    row = row + 1
 
-# use linalg to solve for Alms
-#Alms = np.linalg.solve(S, R)
-#print(Alms)
-
-
-# testing: fill with zeros
-T = np.zeros((Nv-1, Nv-1))
-for i in range(0, Nv-1):
-    T[i, 0] = Y00
-    T[i, 1] = Y01(thetas[i])
-    T[i, 2] = Y02(thetas[i])
-
-Alms = np.linalg.solve(T,R)
+Alms = np.linalg.solve(S2, R)
+print("Alms: ")
+print(Alms)
