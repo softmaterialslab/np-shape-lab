@@ -13,6 +13,7 @@ xPos = []
 yPos = []
 zPos = []
 
+
 # read data, populate lists
 with open('disc.txt', mode='r') as csv_file:
     csv_reader = csv.reader(csv_file, delimiter='\t')
@@ -43,16 +44,18 @@ for i in range(0, Nv-1):
     else:
         thetas.append(np.arctan(yPos[i]/xPos[i]))
             
-# create R vector, sampling from dataset (vertices 0, 100, 200)
+# create R vector, sampling from dataset (vertices 0, 124, 248)
 R = []
 avgR = sum(radius)/Nv
-for i in range(0, 300, 100):
+for i in range(0,372,124):
+    print(i)
     R.append((radius[i] - avgR)/avgR)
 
-# create square coefficient matrix, sampling from dataset (vertices 0, 100, 200)
+# create square coefficient matrix, sampling from dataset (vertices 0, 124, 248)
 S2 = np.zeros((3, 3))
 row = 0
-for i in range(0, 300, 100):
+for i in range(0,372,124):
+    print(i)
     S2[row, 0] = Y00
     S2[row, 1] = Y01(thetas[i])
     S2[row, 2] = Y02(thetas[i])
@@ -61,3 +64,4 @@ for i in range(0, 300, 100):
 Alms = np.linalg.solve(S2, R)
 print("Alms: ")
 print(Alms)
+
