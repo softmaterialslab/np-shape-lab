@@ -82,7 +82,7 @@ def test_example_five():
     assert math.isclose(t, 12.5099, rel_tol=1e-2)
 
     df = pd.read_csv('outfiles/energy_in_parts_kE_bE_sE_tE_ljE_esE.dat', sep=r"\s+", header=None)
-    t = df.iat[-1, 6]
+    t = df.iat[-1, 4]
     assert math.isclose(t, 304.044, rel_tol=1e-1)
 
 
